@@ -12,7 +12,7 @@ info despligue TODO
 
 ## Implementacion de nuevas tiendas <a id="nuevos_productos">
 
-Toda la informacion de referencia sobre este tema se encuentra [aqui](dsg\document.md)
+Toda la informacion de referencia sobre este tema se encuentra [aqui](https://github.com/pablolanderas/StoreBot/blob/main/dsg/document.md)
 
 ## Sobre mi <a id="sobre_mi">
 
