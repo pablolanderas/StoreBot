@@ -1,5 +1,6 @@
-**Documentacion añadir productos**  
-====================================
+# Documentacion añadir nuevas tiendas
+
+Para añadir nuevas tiendas se hace a traves de herencia del la clase ``Prodcuto`` con la implementacion aqui explicada`'
 
 ## Indice
 
@@ -92,5 +93,8 @@ Para facilitar su debugueo, implementar la clase para que al ser pintado el obje
 
 ## Implementacion <a id="implementacion"/>
 
+Para la implementacion de la clase y que funcione correctamente hay que añadir el producto al archivo ``ListaProductos.py``. Para esto hay que importarlo desde la carpeta y añadirlo al diccionario, la llave debe de ser el dominio del producto y el valor la clase heredada
 
 ## Consejos <a id="consejos"/>
+
+Puedes utilizar la funcion ``pprint()`` de la libreria pprint para pintar por pantalla los ``json`` y poder trabajar mejor con ellos
