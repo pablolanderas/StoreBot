@@ -25,7 +25,7 @@
 
 Lo primero es iniciar el entorno virtual ``env`` con el siguiente comando:
     
-    python3 -m venv env
+    py -m venv env
 
 Despues hay que activar el entorno virutal, este paso se ha de realizar siempre que se salga del mismo para poder ejecutar correctamente el programa. Para poder entrar al entorno virual se haría con el siguiente comando:
 
