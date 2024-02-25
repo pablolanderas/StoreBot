@@ -3,12 +3,13 @@ from dominio.Peticion import Peticion
 
 
 class Usuario:
-    username : str
-    chatId : int
-    chatMessages : list[Mensaje]
-    peticiones : dict[int:Peticion]
+    username: str
+    chatId: int
+    chatMessages: list[Mensaje]
+    peticiones: dict[int:Peticion]
     anhadiendoProducto: bool
-    temporal : None
+    temporal: Peticion
+    tagsTemporal: list
 
     def __init__(self, username:str, chatId:int) -> None:
         self.username = username

@@ -51,7 +51,7 @@ class ProductoZara(Producto):
         return prec
     
     def obtenFoto(self) -> bytes:
-        return open("./bot/img/logoZara.jpg", "rb")
+        return open("./resources/logoZara.jpg", "rb")
     
     def __eq__(self, __value: object) -> bool:
         return type(__value) == ProductoZara and __value.codigoProdcucto == self.codigoProdcucto

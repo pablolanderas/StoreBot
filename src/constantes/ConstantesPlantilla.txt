@@ -1,0 +1,3 @@
+BOT_TOKEN = ******** 
+ID_CHAT_AVISOS = None
+ID_CHAT_ERRORES = None

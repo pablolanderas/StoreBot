@@ -83,16 +83,19 @@ class DataBase:
     def __init__(self, dirDB:str) -> None:
         if not path.exists(dirDB):
             raise ValueError(f"The database doesnt exist at {dirDB}")
-        self.db = connect(dirDB)
+        self.db = connect(dirDB, check_same_thread=False)
 
     def funSelect(self, table:str, columns="*", conditions=None, order=None):
         # Consulta base
+        if type(columns) not in (list, tuple): columns = (columns,)
         consult = f"SELECT {', '.join(columns)} FROM {table}"
         # Condicionales
         if conditions is not None:
+            if type(conditions) not in (list, tuple): conditions = (conditions,)
             consult += f" WHERE {' AND '.join(conditions)}"
         # Orden
         if order is not None:
+            if type(order) not in (list, tuple): order = (order,)
             consult += f" ORDER BY {', '.join(order)}"
         
         return list(self.db.execute(consult))
@@ -116,6 +119,7 @@ class DataBase:
         consult = f"DELETE FROM {table}"
         # Anhade los condicionales
         if conditions is not None:
+            if type(conditions) not in (list, tuple): conditions = (conditions,)
             consult += f" WHERE {' AND '.join(conditions)}"
         # Ejecutar el codigo
         self.db.execute(consult)
@@ -126,6 +130,7 @@ class DataBase:
         consult = f"UPDATE {table} SET {', '.join(map(lambda x: f'{x[0]} = {adaptTipe(x[1])}' ,kwargs.items()))}"
         # Condicionales
         if conditions is not None:
+            if type(conditions) not in (list, tuple): conditions = (conditions,)
             consult += f" WHERE {' AND '.join(conditions)}"
         # Ejecutar la consulta
         self.db.execute(consult)
@@ -152,6 +157,9 @@ class DataBase:
             self.saveMensaje(message, commit=False)
         self.db.commit()
 
+    def deleteAllMensajesFromUsuario(self, user: Usuario):
+        self.funDelete(TABLAS.Mensajes, (f"{ATRIBUTOS.Mensajes.chatId} = {user.chatId}",))
+
     def saveMensaje(self, message:Mensaje, commit=True): 
         # Check if the arg is correct
         if type(message) != Mensaje:
@@ -160,7 +168,7 @@ class DataBase:
         self.funInsert(TABLAS.Mensajes, commit=commit, 
                        messageId=message.messageId, chatId=message.chatId)
 
-    def savePeticion(self, request:Peticion):
+    def savePeticion(self, request: Peticion):
         # Check if the arg is correct
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
@@ -182,7 +190,35 @@ class DataBase:
         # End the query
         self.db.commit()
         return requestId
-    
+
+    # IMPORTANT: This metod doesnt save the notifications
+    def uptadePeticion(self, request: Peticion, commit=True):
+        if type(request) != Peticion:
+            raise ValueError("The type of request is incorrect")
+        # Update the request
+        self.funUpdate(TABLAS.Peticiones, f"{ATRIBUTOS.Peticiones.requestId} = {request.idPeticion}",
+                       commit=False,
+                       usuarioId=request.usuario.chatId,
+                       productId=request.producto.id,
+                       ultPrecio=request.ultPrecio)
+        # Update the wisheds
+        ids = []
+        for wished in request.deseados:
+            if wished.idDeseado is None:
+                self.saveDeseado(wished, commit=False)
+            else:
+                self.updateDeseado(wished, commit=False)
+            ids.append(wished.idDeseado)
+        # Delete the all wisheds
+        query = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.deseadoId, conditions=(
+            f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
+            f"{ATRIBUTOS.Deseado.deseadoId} NOT IN ({', '.join(map(lambda x:str(x), ids))})"))
+        for (wishedId,) in query:
+            wished = Deseado(wishedId, None, None, request)
+            self.deleteDeseado(wished, commit=False)
+        # Commit the changes
+        if commit: self.db.commit()
+
     def saveDeseado(self, wished:Deseado, commit=True):
         # Check if the arg is correct
         if type(wished) != Deseado:
@@ -204,6 +240,39 @@ class DataBase:
                            posicion=index,
                            tagName=tagNameId)        
         # Save the DB
+        if commit: self.db.commit()
+
+    # IMPORTANT: This metod doesnt edit the tags, only edits de message
+    def updateDeseado(self, wished: Deseado, commit=True):
+        wis = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.messageId, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}")
+        if not wis:
+            raise ValueError("The wished you are trying to edit doesnt exist")
+        (messageId, ) = wis[0]
+        # Case new message
+        if messageId is None and wished.mensaje is not None:
+            self.funUpdate(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}",
+                           messageId=wished.mensaje.messageId)
+        # Case before message and now no
+        elif messageId is not None and wished.mensaje is None:
+            pass #TODO
+        # Case all message: Check the message
+        elif messageId is not None and wished.mensaje is not None:
+            pass #TODO
+        # Commit the changes
+        if commit: self.db.commit()
+
+    def deleteDeseado(self, wished: Deseado, commit=True):
+        # Get the tagNames
+        query = self.funSelect(TABLAS.Tag, ATRIBUTOS.Tag.tagName, 
+                               conditions=f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}")
+        # Delete the wished and the tags
+        self.funDelete(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}", commit=False)
+        self.funDelete(TABLAS.Tag, f"{ATRIBUTOS.Tag.deseadoId} = {wished.idDeseado}", commit=False)
+        # Delete the tagName if is unique
+        for (tadNameId,) in query:
+            if not self.funSelect(TABLAS.Tag, conditions=f"{ATRIBUTOS.Tag.tagName} = {tadNameId}"):
+                self.funDelete(TABLAS.TagName, f"{ATRIBUTOS.TagName.tagId} = {tadNameId}", commit=False)
+        # Commit the changes
         if commit: self.db.commit()
 
     def getTagNameId(self, tagName:str, commit=True) -> int:
