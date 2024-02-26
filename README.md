@@ -1,14 +1,14 @@
 # StoreBot
 
-**TODOS:**
+***TODOS:***
 
-    -Gestionar que hacer con las notificaciones cuando se elimina un Deseado que   
-     ha sido notificado.  
-    -Mismo problema cuando se elimina una peticion con el aviso del precio
-    -Info "Sobre mi"
-    -Gestionar caso de no escribir los chat de aviso del bot en las constantes
-    -Gestionar la inicializacion de la base de datos
-    -Quitar la base de datos del git
+- Gestionar que hacer con las notificaciones cuando se elimina un Deseado que   
+    ha sido notificado.  
+- Mismo problema cuando se elimina una peticion con el aviso del precio
+- Info "Sobre mi"
+- Gestionar caso de no escribir los chat de aviso del bot en las constantes
+- Gestionar la inicializacion de la base de datos
+- Quitar la base de datos del git
 
 ## Indice
 
@@ -65,5 +65,5 @@ Toda la informacion de referencia sobre este tema se encuentra [aqui](https://gi
 Hecho por Pablo Landeras, estudiante de ingenieria informatica en la universidad de Cantabria.
 
 **Contacto**:  
-Email: pablolanderas@gmail.com  
-Linkedin: [aqui](#https://www.linkedin.com/in/pablo-landeras-583578242/)
+- Email: pablolanderas@gmail.com  
+- [Linkedin](#https://www.linkedin.com/in/pablo-landeras-583578242/)
