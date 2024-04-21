@@ -34,7 +34,7 @@ La clase ha de tener una constante que indique cual es el dominio de la tienda, 
 
     def __init__(self, url, id) -> None:
 
-Al inicializar la funcion se deben de inicializar todos los datos necesarios para la gestion del producto, sin realizar ninguna peticion, esto se hara en el siguiente paso. Aparte, esta función tambien ha de lanzar una excepcion ``ValueError(THE ERROR)``. Esta excepcion se lanzara en caso de no haber escrito un producto correcto
+Al inicializar la funcion se deben de inicializar todos los datos necesarios para la gestion del producto, sin realizar ninguna peticion, esto se hara en el siguiente paso. Que no se te olvide llamar a la clase padre con ``super().__init__(url, id)``. Aparte, esta función tambien ha de lanzar una excepcion ``ValueError(THE ERROR)``. Esta excepcion se lanzara en caso de no haber escrito un producto correcto
 
 **Descargar datos** <a id="descarga_datos">
 
