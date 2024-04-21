@@ -13,6 +13,13 @@ class Deseado:
         self.tags = tags
         self.peticion = peticion
 
+    def __eq__(self, value: object) -> bool:
+        if type(value) != Deseado: return False
+        if len(self.tags) != len(value.tags): return False
+        for i in range(len(self.tags)):
+            if self.tags[i] != value.tags[i]: return False
+        return True
+
     def __str__(self) -> str:
         if self.mensaje is None: em = "✖"
         else: em = "✔"

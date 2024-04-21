@@ -6,6 +6,7 @@ class Usuario:
     username: str
     chatId: int
     chatMessages: list[Mensaje]
+    notificaciones: list[Mensaje]
     peticiones: dict[int:Peticion]
     anhadiendoProducto: bool
     temporal: Peticion
@@ -15,6 +16,7 @@ class Usuario:
         self.username = username
         self.chatId = chatId
         self.chatMessages = []
+        self.notificaciones = []
         self.peticiones = {}
         self.anhadiendoProducto = False
         self.temporal = None

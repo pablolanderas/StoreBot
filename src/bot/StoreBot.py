@@ -1,9 +1,6 @@
 from telebot.handler_backends import HandlerBackend
 from telebot.storage import StateMemoryStorage, StateStorageBase
-from dominio.Mensaje import Mensaje
-from dominio.Gestor import Gestor
-from dominio.Usuario import Usuario
-from dominio.Peticion import Peticion
+from dominio import Mensaje,  Gestor, Usuario, Deseado, Peticion
 from bot.botFunctions import generateButtons, negrita_html, HTML_FORMAT, START_VIEW, HELP_VIEW, PRODUCT_LIST_HEADER_VIEW, PRODUCT_LIST_FOOTER_VIEW, REQUEST_VIEW, ADD_PRODUCT_VIEW
 
 from telebot import ExceptionHandler, TeleBot
@@ -14,17 +11,25 @@ class StoreBot(TeleBot):
     
     __copiedMessages : list[Mensaje]
     manager : Gestor
+    inloop : bool
 
     def __init__(self, token: str, gestor: Gestor, parse_mode: str | None = None, threaded: bool | None = True, skip_pending: bool | None = False, num_threads: int | None = 2, next_step_backend: HandlerBackend | None = None, reply_backend: HandlerBackend | None = None, exception_handler: ExceptionHandler | None = None, last_update_id: int | None = 0, suppress_middleware_excepions: bool | None = False, state_storage: StateStorageBase | None = ..., use_class_middlewares: bool | None = False, disable_web_page_preview: bool | None = None, disable_notification: bool | None = None, protect_content: bool | None = None, allow_sending_without_reply: bool | None = None, colorful_logs: bool | None = False):
         super().__init__(token, parse_mode, threaded, skip_pending, num_threads, next_step_backend, reply_backend, exception_handler, last_update_id, suppress_middleware_excepions, state_storage, use_class_middlewares, disable_web_page_preview, disable_notification, protect_content, allow_sending_without_reply, colorful_logs)
         # Inicialize the manager
         self.manager = gestor
+        self.inloop = False
         # TODO: Choose the manager call functions
         # Inicialize the commands
         self.inicializeCommands()
         self.set_my_commands((BotCommand("start", "Comienza el bot"),))
         # Inicialize variables
         self.__copiedMessages = []
+
+    def startMainLoop(self):
+        self.inloop = True
+        while self.inloop:
+            self.get_updates()
+            
 
     def inicializeCommands(self) -> None:
         @self.message_handler(func=lambda message: True and not message.text.startswith('/start'))
@@ -42,21 +47,71 @@ class StoreBot(TeleBot):
             self.buttonsControler(user, call.data)
 
     def buttonsControler(self, user: Usuario, data: str):
-        match data:
+        commands = data.split()
+        if not commands: return
+        match commands.pop(0):
             case "cmd_start":
                 self.cmd_start(user)
             case "cmd_help":
                 self.cmd_help(user)
             case "cmd_products_list":
-                self.cmd_product_list(user)
+                if not commands: 
+                    self.cmd_product_list(user)
+                    return
+                match commands.pop(0):
+                    case "remove":
+                        if not commands: return
+                        idPeticion = int(commands.pop(0))
+                        self.manager.removeRequest(user, idPeticion)
+                        self.cmd_product_list(user)
+                    case "edit":
+                        if not commands: return
+                        idPeticion = int(commands.pop(0))
+                        user.temporal = user.peticiones[idPeticion]
+                        self.showAddingRequest(user)                
             case "cmd_add_product":
                 self.cmd_add_product(user)
-            # add_product cases
-            case "add_product save":
-                self.manager.saveTemporalRequest(user)
-                user.anhadiendoProducto = False
-                user.temporal = None
-                self.cmd_add_product(user, notice="El producto se ha guardado correctamente")
+            case "add_product":
+                match commands.pop(0):
+                    case "addTags":
+                        user.tagsTemporal = []
+                        self.showAddingTagsToRequest(user)
+                    case "save":
+                        self.manager.saveTemporalRequest(user)
+                        user.anhadiendoProducto = False
+                        user.temporal = None
+                        self.cmd_add_product(user, notice="El producto se ha guardado correctamente")
+                    case "tagSelected":
+                        tag = commands.pop(0)
+                        # Check if the tag is the last
+                        temp = user.temporal.producto.tags
+                        for key in user.tagsTemporal:
+                            temp = temp[key]
+                        if tag not in temp:
+                            return
+                        user.tagsTemporal.append(tag)
+                        temp = temp[tag]
+                        if type(temp) != dict:
+                            extraMessage = None
+                            des = Deseado(None, None, user.tagsTemporal, user.temporal)
+                            if des in user.temporal.deseados:
+                                extraMessage = "Ya habias añadido este aviso"
+                            else:
+                                user.temporal.deseados.append(des)
+                                user.tagsTemporal = []
+                            self.showAddingRequest(user, extraMessage=extraMessage)
+                        else:
+                            self.showAddingTagsToRequest(user)
+                    case "cancelAddTags":
+                        user.tagsTemporal = []
+                        self.showAddingRequest(user)
+                    case "cleanTags":
+                        user.temporal.deseados.clear()
+                        self.showAddingRequest(user)
+            case "del_notification":
+                if len(commands) != 2: return
+                idPeticion, idDeseado = commands
+                self.manager.deleteNotification(user, int(idPeticion), idDeseado)
             case _:
                 print("COMANDO RARO:", data)
 
@@ -109,7 +164,10 @@ class StoreBot(TeleBot):
             self.sendMessage(user, text, parseMode=HTML_FORMAT)
         else: # Case requests
             for request in user.peticiones.values():
-                self.showRequest(request, [[("Eliminar", f"cmd_product_list remove {request.idPeticion}")]])
+                self.showRequest(request, [
+                    [("Eliminar", f"cmd_products_list remove {request.idPeticion}"),
+                    ("Editar", f"cmd_products_list edit {request.idPeticion}")]
+                ])
         # Show the footer
         text, photo, buttons, parseMode = PRODUCT_LIST_FOOTER_VIEW()
         self.sendMessage(user, text, buttons, parseMode, photo=photo)
@@ -144,6 +202,11 @@ class StoreBot(TeleBot):
         message = Mensaje(message)
         if saveMessage: self.manager.saveMessage(message)
         return message
+    
+    def sendNotification(self, user:Usuario, text:str, buttons=None, parseMode="html", photo:bytes=None) -> Mensaje:
+        message = self.sendMessage(user, text, buttons, parseMode, photo=photo, saveMessage=False)
+        self.manager.saveNotification(message)
+        return message
 
     def getUserAndMessageFromBotsMessageType(self, message, removeMessage: bool) -> Usuario:
         # Get the correct message type
@@ -167,13 +230,36 @@ class StoreBot(TeleBot):
         text, photo, _, parseMode = REQUEST_VIEW(request)
         self.sendMessage(request.usuario, text, buttons, parseMode, photo=photo)
 
-    def showAddingRequest(self, user: Usuario):
+    def showAddingRequest(self, user: Usuario, extraMessage:str=None):
         self.copyUsersMessagesToDelete(user)
         # Show the request
         buttons = [
             [("Añadir avisos", "add_product addTags")],
+            [("Limpiar avisos", "add_product cleanTags")],
             [("Guardar", "add_product save"), ("Cancelar", "cmd_start")]
         ]
+        # Show the extra message
+        if extraMessage is not None:
+            self.sendMessage(user, extraMessage)
+        self.showRequest(user.temporal, buttons)
+        # Delete the copied messgaes
+        self.deleteCopiedMessages()
+
+    def showAddingTagsToRequest(self, user):
+        self.copyUsersMessagesToDelete(user)
+        temp = user.temporal.producto.tags
+        for key in user.tagsTemporal:
+            temp = temp[key]
+        # Show the request
+        types = []
+        for key in temp.keys():
+            types.append((key, f"add_product tagSelected {key}"))
+        buttons = []
+        while types:
+            buttons.append(types[:3])
+            types = types[3:]
+        buttons.append([("Cancelar", "add_product cancelAddTags")])
+
         self.showRequest(user.temporal, buttons)
         # Delete the copied messgaes
         self.deleteCopiedMessages()

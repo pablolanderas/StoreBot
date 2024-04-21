@@ -1,7 +1,6 @@
 from dominio.Producto import Producto
 
 from requests import get as getRequest
-#from pprint import pprint
 
 DIR_PETICION = "https://www.zara.com/es/es/products-details?productIds="
 HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0' }
@@ -57,7 +56,7 @@ class ProductoZara(Producto):
         return type(__value) == ProductoZara and __value.codigoProdcucto == self.codigoProdcucto
     
     def __str__(self) -> str:
-        return f"[ProdcutoZara|Nombre='{self.nombre}'|Codigo={self.codigoProdcucto}]"
+        return f"[ProdcutoZara|Nombre='{self.nombre}'|Codigo={self.codigoProdcucto}] {self.id}"
 
 
 def obtenerCodigoProdcucto( url:str ) -> str:

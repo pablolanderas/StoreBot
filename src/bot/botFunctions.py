@@ -1,6 +1,13 @@
-from dominio.Peticion import Peticion
+from dominio import Peticion, Mensaje
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+# Format functions
+def negrita_html(texto:str): return f"<b>{texto}</b>"
+def subrayado_html(texto:str): return f"<u>{texto}</u>"
+def enclace_html(texto, enlace): return f'<a href="{enlace}">{texto}</a>'
+def negrita_markdown(message): return f"*{message}*"
+def enlace_markdown(texto, enlace): return f'[{texto}]("{enlace}")'
 
 # Functions for the bot
 def generateButtons(buttons) -> InlineKeyboardMarkup:
@@ -11,15 +18,19 @@ def generateButtons(buttons) -> InlineKeyboardMarkup:
         fila)))
     return InlineKeyboardMarkup(obtButtons)
 
+def funToSendAdvise(peticion: Peticion, message: Mensaje, codigo: str, bot)-> Mensaje:
+    producto = peticion.producto
+    message = negrita_html("Nuevo precio para "+enclace_html(producto.nombre, producto.url)) + "\n\n" + message
+    photo = producto.obtenFoto()
+    buttons = [[("Cerrar aviso", f"del_notification {peticion.idPeticion} {codigo}")]]
+    return bot.sendMessage(peticion.usuario, message, buttons=buttons, photo=photo, saveMessage=False)
+
+def funToDeleteMessage(peticion: Peticion, message: Mensaje, bot):
+    message.chatId = peticion.usuario.chatId
+    bot.deleteMessage(message)
+
 # The formats
 HTML_FORMAT = "html"
-
-# Format functions
-def negrita_html(texto:str): return f"<b>{texto}</b>"
-def subrayado_html(texto:str): return f"<u>{texto}</u>"
-def enclace_html(texto, enlace): return f'<a href="{enlace}">{texto}</a>'
-def negrita_markdown(message): return f"*{message}*"
-def enlace_markdown(texto, enlace): return f'[{texto}]("{enlace}")'
 
 # The bot commands
 COMANDOS = [
@@ -92,7 +103,7 @@ def REQUEST_VIEW(request: Peticion):
         text += f"-{' - '.join(wished.tags)}\n"
     # The photo
     photo = product.obtenFoto()
-    # The buttones
+    # The buttons
     buttons = None
 
     return text, photo, buttons, HTML_FORMAT

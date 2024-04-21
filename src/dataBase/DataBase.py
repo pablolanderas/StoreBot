@@ -12,6 +12,7 @@ class TABLAS:
     Usuarios = "Usuarios"
     Peticiones = "Peticiones"
     Mensajes = "Mensajes"
+    Notificacion = "Notificacion"
     TagName = "TagName"
     Tag = "Tag"
     Deseado = "Deseado"
@@ -33,6 +34,10 @@ class ATRIBUTOS:
         ultPrecio = "ultPrecio"
 
     class Mensajes:
+        messageId = "messageId"
+        chatId = "chatId"
+
+    class Notificacion:
         messageId = "messageId"
         chatId = "chatId"
 
@@ -146,6 +151,17 @@ class DataBase:
         # Return de Id
         return Id
 
+    def deleteProducto(self, product:Producto):
+        # Check if the arg is correct
+        if not isinstance(product, Producto):
+            raise ValueError("The type of product is incorrect")
+        # Delete the product
+        self.funDelete(TABLAS.Productos, f"{ATRIBUTOS.Productos.productId} = {product.id}")
+
+    def checkIfProductInRequest(self, product:Producto) -> bool:
+        query = self.funSelect(TABLAS.Peticiones, ATRIBUTOS.Peticiones.productId, f"{ATRIBUTOS.Peticiones.productId} = {product.id}")
+        return len(query) > 0
+
     def saveUsuario(self, user:Usuario):
         # Check if the arg is correct
         if type(user) != Usuario:
@@ -155,6 +171,10 @@ class DataBase:
         # Save the messages
         for message in user.chatMessages:
             self.saveMensaje(message, commit=False)
+        # Save the notifications
+        for message in user.notificaciones:
+            self.saveNotificacion(message, commit=False)
+        # Commit the changes
         self.db.commit()
 
     def deleteAllMensajesFromUsuario(self, user: Usuario):
@@ -166,6 +186,14 @@ class DataBase:
             raise ValueError("The type of message is incorrect")
         # Save in the DB
         self.funInsert(TABLAS.Mensajes, commit=commit, 
+                       messageId=message.messageId, chatId=message.chatId)
+
+    def saveNotificacion(self, message:Mensaje, commit=True):
+        # Check if the arg is correct
+        if type(message) != Mensaje:
+            raise ValueError("The type of message is incorrect")
+        # Save in the DB
+        self.funInsert(TABLAS.Notificacion, commit=commit,
                        messageId=message.messageId, chatId=message.chatId)
 
     def savePeticion(self, request: Peticion):
@@ -191,8 +219,20 @@ class DataBase:
         self.db.commit()
         return requestId
 
+    def deletePeticion(self, request: Peticion):
+        # Check if the arg is correct
+        if type(request) != Peticion:
+            raise ValueError("The type of request is incorrect")
+        # Delete the request
+        self.funDelete(TABLAS.Peticiones, f"{ATRIBUTOS.Peticiones.requestId} = {request.idPeticion}", commit=False)
+        # Delete the wishes
+        for wished in request.deseados:
+            self.deleteDeseado(wished, commit=False)
+        # Commit the changes
+        self.db.commit()
+
     # IMPORTANT: This metod doesnt save the notifications
-    def uptadePeticion(self, request: Peticion, commit=True):
+    def updatePeticion(self, request: Peticion, commit=True, updateWisheds=True):
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
         # Update the request
@@ -202,22 +242,58 @@ class DataBase:
                        productId=request.producto.id,
                        ultPrecio=request.ultPrecio)
         # Update the wisheds
-        ids = []
-        for wished in request.deseados:
-            if wished.idDeseado is None:
-                self.saveDeseado(wished, commit=False)
-            else:
-                self.updateDeseado(wished, commit=False)
-            ids.append(wished.idDeseado)
+        if updateWisheds:
+            ids = []
+            for wished in request.deseados:
+                if wished.idDeseado is None:
+                    self.saveDeseado(wished, commit=False)
+                else:
+                    self.updateDeseado(wished, commit=False)
+                ids.append(wished.idDeseado)
+            # Save the price wish
+            if request.notificacionPrecio != None:
+                priceId = self.updatePeticionPriceMessage(request, commit=False)
+                ids.append(priceId)
         # Delete the all wisheds
-        query = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.deseadoId, conditions=(
-            f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
-            f"{ATRIBUTOS.Deseado.deseadoId} NOT IN ({', '.join(map(lambda x:str(x), ids))})"))
-        for (wishedId,) in query:
-            wished = Deseado(wishedId, None, None, request)
-            self.deleteDeseado(wished, commit=False)
+            query = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.deseadoId, conditions=(
+                f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
+                f"{ATRIBUTOS.Deseado.deseadoId} NOT IN ({', '.join(map(lambda x:str(x), ids))})"))
+            for (wishedId,) in query:
+                wished = Deseado(wishedId, None, None, request)
+                self.deleteDeseado(wished, commit=False)
         # Commit the changes
         if commit: self.db.commit()
+
+    def deletePeticionPriceMessage(self, request:Peticion, commit=True):
+        if type(request) != Peticion:
+            raise ValueError("The type of request is incorrect")
+        # Delete the price wish
+        self.funDelete(TABLAS.Deseado, conditions=(
+                f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
+                f"{ATRIBUTOS.Deseado.tipoPrecio} = 1"))
+        # Commit the changes
+        if commit: self.db.commit()
+
+    def updatePeticionPriceMessage(self, request:Peticion, commit=True):
+        if type(request) != Peticion:
+            raise ValueError("The type of request is incorrect")
+        # Update the price wish
+        resp = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.deseadoId, conditions=(
+                    f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
+                    f"{ATRIBUTOS.Deseado.tipoPrecio} = 1"))
+        if resp:
+            priceId = resp[0][0]
+            self.funUpdate(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {priceId}", 
+                            messageId=request.notificacionPrecio.messageId, commit=False)
+        else:
+            priceId = self.funInsert(TABLAS.Deseado, commit=False,
+                            requestId=request.idPeticion, 
+                            messageId=request.notificacionPrecio.messageId, 
+                            tipoPrecio=1)
+        # Commit the changes
+        if commit:
+            self.db.commit()
+        return priceId
 
     def saveDeseado(self, wished:Deseado, commit=True):
         # Check if the arg is correct
@@ -242,22 +318,35 @@ class DataBase:
         # Save the DB
         if commit: self.db.commit()
 
+    def getWishedsForRequest(self, request:Peticion, getTags=True) -> list[Deseado]:
+        # Exit if the type is bad
+        if type(request) != Peticion:
+            raise ValueError("The type of request is incorrect")
+        query = self.funSelect(TABLAS.Deseado, 
+                               conditions=f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}")
+        wisheds = []
+        for (wishedId, _, messageId, tipoPrecioId) in query:
+            if not tipoPrecioId:
+                if messageId is None: msg = None
+                else: msg = Mensaje(None, None, request.usuario.chatId, None, messageId)
+                wished = Deseado(wishedId, msg, [], request)
+                if getTags:
+                    wished.tags = self.getWishedTags(wishedId)
+                wisheds.append(wished)
+        return wisheds
+
     # IMPORTANT: This metod doesnt edit the tags, only edits de message
     def updateDeseado(self, wished: Deseado, commit=True):
         wis = self.funSelect(TABLAS.Deseado, ATRIBUTOS.Deseado.messageId, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}")
         if not wis:
             raise ValueError("The wished you are trying to edit doesnt exist")
-        (messageId, ) = wis[0]
-        # Case new message
-        if messageId is None and wished.mensaje is not None:
-            self.funUpdate(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}",
-                           messageId=wished.mensaje.messageId)
-        # Case before message and now no
-        elif messageId is not None and wished.mensaje is None:
-            pass #TODO
-        # Case all message: Check the message
-        elif messageId is not None and wished.mensaje is not None:
-            pass #TODO
+        # Save the data
+        if wished.mensaje is not None:
+            messageId = wished.mensaje.messageId
+        else:
+            messageId = None
+        self.funUpdate(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}",
+                        messageId=messageId, commit=False)
         # Commit the changes
         if commit: self.db.commit()
 
@@ -325,6 +414,15 @@ class DataBase:
                 messageId = messageId[0]
                 message = Mensaje(None, None, chatId, username, messageId)
                 user.chatMessages.append(message)
+            # Add the notifications
+            notificationsQuery = self.funSelect(TABLAS.Notificacion, 
+                                               columns=(ATRIBUTOS.Notificacion.messageId,),
+                                               conditions=(f"{ATRIBUTOS.Notificacion.chatId} = {chatId}",),
+                                               order=(ATRIBUTOS.Notificacion.messageId,))
+            for messageId in notificationsQuery:
+                messageId = messageId[0]
+                message = Mensaje(None, None, chatId, username, messageId)
+                user.notifications.append(message) 
             # Add the request
             requestQuery = self.funSelect(TABLAS.Peticiones, columns=(
                 ATRIBUTOS.Peticiones.requestId, ATRIBUTOS.Peticiones.productId, ATRIBUTOS.Peticiones.ultPrecio
@@ -347,34 +445,5 @@ class DataBase:
                         tags = self.getWishedTags(wishedId)
                         wished = Deseado(wishedId, message, tags, request)
                         request.deseados.append(wished)
-
-        
-if __name__ == "__main__":
-    DataBase.startDataBase("./database.db", "./resources/database.sql")
-    db = DataBase("./database.db")
-    db.funDelete(TABLAS.Usuarios)
-    db.funDelete(TABLAS.Mensajes)
-    db.funDelete(TABLAS.Productos)
-    db.funDelete(TABLAS.Peticiones)
-    db.funDelete(TABLAS.Deseado)
-    db.funDelete(TABLAS.TagName)
-    db.funDelete(TABLAS.Tag)
-    Peticion.funcionNotificarUsuario = lambda x: print(x)
-
-    user = Usuario("usuario", 23441)
-    db.saveUsuario(user)
-    prod = Producto.inicaProducto("https://www.zara.com/es/es/top-popelin-palabra-de-honor-abalorios-p00881007.html?v1=271552262")
-    db.saveProducto(prod)
-    req = Peticion(user, prod)
-    #req.deseados.append(Deseado(None, None, ["tag1", "tag2", "tag3"], req))
-    req.deseados.append(Deseado(None, Mensaje(None, None, None, None, 23445234), ["tag1", "tag2", "tag3"], req))
-    db.savePeticion(req)
-
-    print("Usuarios:", db.funSelect(TABLAS.Usuarios))
-    print("Productos:", db.funSelect(TABLAS.Productos))
-    print("Peticiones:", db.funSelect(TABLAS.Peticiones))
-    print("Deseados:", db.funSelect(TABLAS.Deseado))
-    print("Tag:", db.funSelect(TABLAS.Tag))
-    print("TagName:", db.funSelect(TABLAS.TagName))
 
     

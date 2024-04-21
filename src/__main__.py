@@ -1,15 +1,12 @@
-from dominio.Deseado import Deseado
-from dominio.Mensaje import Mensaje
-from dominio.Peticion import Peticion
-from dominio.Producto import Producto
-from dominio.Usuario import Usuario
-from dominio.Gestor import Gestor
+from dominio import Deseado, Mensaje, Peticion, Producto, Usuario, Gestor
 from bot.StoreBot import StoreBot
+from bot.botFunctions import funToDeleteMessage, funToSendAdvise, HTML_FORMAT
 from constantes.Constantes import BOT_TOKEN
 
 from dataBase.DataBase import DataBase
 
 from os import chdir
+from threading import Thread
 
 def main(checkDB):
 
@@ -22,49 +19,32 @@ def main(checkDB):
         DataBase.startDataBase("./dataBase/database.db", "./dataBase/database.sql")
         db = DataBase("./dataBase/database.db")
 
-        user = Usuario("usuario", 23441)
-        user.chatMessages.append(
-            Mensaje(None, "Mensaje", user.chatId, user.username, 2)
-        )
-        user.chatMessages.append(
-            Mensaje(None, "Mensjae", user.chatId, user.username, 1)
-        )
-        db.saveUsuario(user)
-        prod = Producto.inicaProducto("https://www.zara.com/es/es/top-popelin-palabra-de-honor-abalorios-p00881007.html?v1=271552262")
-        db.saveProducto(prod)
-        req = Peticion(user, prod)
-        req.notificacionPrecio = Mensaje(None, None, user.chatId, user.username, 223412)
-        req.deseados.append(Deseado(None, None, ["tag1", "tag2", "tag3"], req))
-        req.deseados.append(Deseado(None, Mensaje(None, None, None, None, 23445234), ["tag1", "tag2", "tag3", "tag4"], req))
-        db.savePeticion(req)
-
-        gestor = Gestor(db)
-
-        for p in gestor.productos.values():
-            print(p)
-
-        print("-----------------------------------------------------------------")
-
-        for u in gestor.usuarios.values(): 
-            print(u, u.chatMessages)
-            for p in u.peticiones.values():
-                print(" ",p, "AVISO PRECIO:", p.notificacionPrecio)
-                for d in p.deseados:
-                    print("     ", d)
     else:
         # Inicialize the reporters
-        Peticion.funcionNotificarUsuario = lambda x: print(x)
+        Peticion.funcionNotificarUsuario = "TODO"
+        Peticion.funcionEliminaNotificacion = "TODO"
         Gestor.funError = lambda obt, x: print("[ERROR]:{", x, "}")
         Gestor.funReporte = lambda obj, x: print("[INFO]:{", x, "}")
 
         # Load the database
         db = DataBase("./dataBase/database.db")
-
+        # Load the database to the classes
+        Peticion.dataBase = db
+        # Initialize the gestor
         gestor = Gestor(db)
-
+        # Initialize the bot
         bot = StoreBot(BOT_TOKEN, gestor)
-
+        # Finalize the reportesrs
+        Peticion.funcionNotificarUsuario = lambda peticion, message, codigo: funToSendAdvise(peticion, message, codigo, bot)
+        Peticion.funcionEliminaNotificacion = lambda peticion, message: funToDeleteMessage(peticion, message, bot)
+        gestor.funDelMessage = lambda message: bot.deleteMessage(message)
+        gestor.funNotificateUser = lambda user, message: bot.sendMessage(user, message, parseMode=HTML_FORMAT)
+        # Create the threads
+        gestor_thread = Thread(target=gestor.startMainLoop)
+        # Start the threads
+        gestor_thread.start()
         bot.infinity_polling()
+        gestor_thread.join(timeout=1)
 
 
 if __name__ == "__main__":

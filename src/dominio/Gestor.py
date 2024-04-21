@@ -1,8 +1,9 @@
-from dominio.Usuario import Usuario
+from dominio.Usuario import Usuario 
 from dominio.Producto import Producto
 from dominio.Mensaje import Mensaje
 from dominio.Peticion import Peticion
-from dominio.Deseado import Deseado
+from bot.botFunctions import enclace_html
+from time import sleep
 
 from dataBase.DataBase import DataBase
 
@@ -15,6 +16,8 @@ class Gestor:
     productos : dict[int:Producto]
     funReporte = None
     funError = None
+    funDelMessage = None
+    funNotificateUser = None
 
     def __init__(self, dataBase:DataBase, cargarGestor=True) -> None:
         # Check if the functions have been inicializated
@@ -52,6 +55,12 @@ class Gestor:
             user.chatMessages.append(message)
         self.dataBase.saveMensaje(message)
 
+    def saveNotification(self, message: Mensaje) -> None:
+        user: Usuario = self.usuarios[message.chatId]
+        if message not in user.notifications:
+            user.notifications.append(message)
+        self.dataBase.saveNotificacion(message)
+
     def startProduct(self, user: Usuario, url: str) -> int:
         # Get the product
         try:
@@ -74,18 +83,129 @@ class Gestor:
         request: Peticion = user.temporal
         product: Producto = request.producto
         # Case product in the manager
-        if product.id in self.productos.values():
-            products :list[Producto] = self.productos.values()
+        if product in self.productos.values():
+            products :list[Producto] = list(self.productos.values())
             product = products[products.index(product)]
             request.producto = product
         # Else add the product
         else:
             self.dataBase.saveProducto(product)
+            self.productos[product.id] = product
         # Save the request in the DB
         if request.idPeticion is None:
             self.dataBase.savePeticion(request)
+        else:
+            for wished in self.dataBase.getWishedsForRequest(request):
+                if wished.mensaje:
+                    self.funDelMessage(wished.mensaje)
+            self.dataBase.updatePeticion(request)
         # Add the request to the user
         user.peticiones[request.idPeticion] = request
         # Cear the temp
         user.temporal = None
+
+    def removeRequest(self, user: Usuario, idPeticion: int):
+        # Get the request and the product
+        request: Peticion = user.peticiones[idPeticion]
+        product = request.producto
+        # Remove the request
+        del user.peticiones[idPeticion]
+        # Delete the messges from the request
+        if request.notificacionPrecio:
+            self.funDelMessage(request.notificacionPrecio)
+        for wished in request.deseados:
+            if wished.mensaje:
+                self.funDelMessage(wished.mensaje)
+        # Delete the request from the DB
+        self.dataBase.deletePeticion(request)
+        # Delete the product if isnt in other request
+        if not self.dataBase.checkIfProductInRequest(request.producto):
+            del self.productos[product.id]
+            self.dataBase.deleteProducto(product)
+
+    def deleteNotification(self, user: Usuario, idPeticion: int, idDeseado: str):
+        # Get the request
+        request = user.peticiones[idPeticion]
+        # If the notification is the price
+        if idDeseado == "precio":
+            msg = request.notificacionPrecio
+            # Delete in the db
+            request.notificacionPrecio = None
+            self.dataBase.deletePeticionPriceMessage(request)
+            # Delete the notification
+            self.funDelMessage(msg)
+            return
+        else:
+            idDeseado = int(idDeseado)
+        # Get the notification
+        filtrate = list(filter(lambda x: x.idDeseado==idDeseado, request.deseados))
+        if not filtrate: return
+        deseado = filtrate[0]
+        msg = deseado.mensaje
+        # Delete the notification in the db
+        deseado.mensaje = None
+        self.dataBase.updateDeseado(deseado)
+        # Delete the notification from the request
+        deseado.mensaje = None
+        # Delete the notification
+        self.funDelMessage(msg)
+
+    def startMainLoop(self, pintaActualizaciones=False):
+        self.enBuclePrincipal = True
+        while self.enBuclePrincipal:
+            # Update the products
+            for key in list(self.productos.keys()).copy():
+                product = self.productos.get(key)
+                if product:
+                    try:
+                        product.actualiza()
+                        if pintaActualizaciones: print(f"[Actualizado]: {product}")
+                    except Exception as e:
+                        self.mannageUpdateProductError(e, product, key)
+            # Check the requests
+            for key in self.usuarios.keys():
+                user = self.usuarios.get(key)
+                for key in list(user.peticiones.keys()).copy():
+                    request = user.peticiones.get(key)
+                    try:
+                        result = request.comprueba()
+                        # Save in the db
+                        if result:
+                            self.dataBase.updatePeticion(request)
+                    except Exception as e:
+                        self.mannageCheckRequestError(e, request, user)
+            # Wait 1 minute
+            sleep(5)
+
+    def mannageUpdateProductError(self, error: Exception, product: Producto, productKey: int):
+        # Delete the requests of the product and notify the user
+        for key in self.usuarios.keys():
+                user: Usuario = self.usuarios.get(key)
+                requests = list(user.peticiones.values()).copy()
+                productRequests = list(filter(lambda x: x.producto == product, requests))
+                for request in productRequests:
+                    self.removeRequest(user, request.idPeticion)
+                    text = f"El producto {product} con ID {productKey} se ha eliminado por un error"
+                    self.funNotificateUser(user, text)      
+        # Notificate the error
+        text =  f"<b>Error en el bucle de productos</b>\n"
+        text += f"Se eliminio el producto: {product}\n"
+        text += f"Con ID {productKey}\n"
+        text += f"Error: \n{error}"
+        text += "\n----------------"
+
+        self.funError(text)
+
+    def mannageCheckRequestError(self, error: Exception, request: Peticion, user: Usuario):
+        # Delete the request
+        self.removeRequest(user, request.idPeticion)
+        # Notificate the user
+        text = f"Se ha eliminado la petición del producto {enclace_html(request.producto.nombre, request.producto.url)} por un error"
+        self.funNotificateUser(user, text)
+        # Notificate the error
+        text =  f"<b>Error en el bucle decomprobación de peticiones</b>\n"
+        text += f"Se eliminio la petición: \n{request}\n"
+        text += f"Error: \n{error}"
+
+        self.funError(text)
 

@@ -19,6 +19,12 @@ CREATE TABLE Mensajes (
     FOREIGN KEY (chatId) REFERENCES Usuarios(chatId)
 );
 
+CREATE TABLE Notificacion (
+    messageId INTEGER NOT NULL PRIMARY KEY,
+    chatId INTEGER NOT NULL,
+    FOREIGN KEY (chatId) REFERENCES Usuarios(chatId)
+);
+
 CREATE TABLE Peticiones (
     requestId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     usuarioId INTEGER NOT NULL,

@@ -10,7 +10,10 @@ class Mensaje:
         if message is not None:
             self.text = message.text
             self.chatId = message.chat.id
-            self.username = message.from_user.username
+            if message.from_user:
+                self.username = message.from_user.username
+            else:
+                self.username = None
             self.messageId = message.id
         else:
             self.text = text
