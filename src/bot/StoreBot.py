@@ -112,6 +112,14 @@ class StoreBot(TeleBot):
                 if len(commands) != 2: return
                 idPeticion, idDeseado = commands
                 self.manager.deleteNotification(user, int(idPeticion), idDeseado)
+            case "del_request":
+                if not commands: return
+                idPeticion = int(commands.pop(0))
+                self.manager.removeRequest(user, idPeticion)     
+            case "del_whised":
+                if len(commands) != 2: return
+                idPeticion, idDeseado = commands
+                self.manager.deleteWished(user, int(idPeticion), int(idDeseado))           
             case _:
                 print("COMANDO RARO:", data)
 

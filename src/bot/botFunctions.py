@@ -22,7 +22,11 @@ def funToSendAdvise(peticion: Peticion, message: Mensaje, codigo: str, bot)-> Me
     producto = peticion.producto
     message = negrita_html("Nuevo precio para "+enclace_html(producto.nombre, producto.url)) + "\n\n" + message
     photo = producto.obtenFoto()
-    buttons = [[("Cerrar aviso", f"del_notification {peticion.idPeticion} {codigo}")]]
+    if codigo == "precio":
+        buttons = [[("Borrar peticion", f"del_request {peticion.idPeticion}")]]
+    else:
+        buttons = [[("Borrar peticion", f"del_request {peticion.idPeticion}"), ("Borrar deseado", f"del_whised {peticion.idPeticion} {codigo}")]]
+    buttons.append([("Cerrar aviso", f"del_notification {peticion.idPeticion} {codigo}")])
     return bot.sendMessage(peticion.usuario, message, buttons=buttons, photo=photo, saveMessage=False)
 
 def funToDeleteMessage(peticion: Peticion, message: Mensaje, bot):

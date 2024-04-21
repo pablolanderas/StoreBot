@@ -2,6 +2,7 @@ from dominio.Usuario import Usuario
 from dominio.Producto import Producto
 from dominio.Mensaje import Mensaje
 from dominio.Peticion import Peticion
+from dominio.Deseado import Deseado
 from bot.botFunctions import enclace_html
 from time import sleep
 
@@ -149,6 +150,20 @@ class Gestor:
         deseado.mensaje = None
         # Delete the notification
         self.funDelMessage(msg)
+
+    def deleteWished(self, user: Usuario, idPeticion: int, idDeseado: str):
+        # Get the request
+        request = user.peticiones[idPeticion]
+        # Get the wished
+        filtrate = list(filter(lambda x: x.idDeseado==idDeseado, request.deseados))
+        if not filtrate: return
+        deseado: Deseado = filtrate[0]
+        # Delete the notification if exists
+        if deseado.mensaje:
+            self.funDelMessage(deseado.mensaje)
+        # Delete the wished
+        request.deseados.remove(deseado)
+        self.dataBase.deleteDeseado(deseado)
 
     def startMainLoop(self, pintaActualizaciones=False):
         self.enBuclePrincipal = True
