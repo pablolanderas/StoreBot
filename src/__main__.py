@@ -1,7 +1,7 @@
 from dominio import Deseado, Mensaje, Peticion, Producto, Usuario, Gestor
 from bot.StoreBot import StoreBot
 from bot.botFunctions import funToDeleteMessage, funToSendAdvise, HTML_FORMAT
-from constantes.Constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES
+from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES
 
 from dataBase.DataBase import DataBase
 from os.path import exists
