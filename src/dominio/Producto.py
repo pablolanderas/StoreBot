@@ -25,6 +25,7 @@ class Producto:
         # Inicializamos el nombre
         if inicializate:
             self.iniciaNombre()
+            self.iniciaFoto()
         # Inicializamos las tags
         self.actualizaTags()
         # Obtenemos el precio
@@ -60,6 +61,9 @@ class Producto:
 
     def obtenPrecio(self) -> float:
         return 0
+    
+    def iniciaFoto(self) -> None:
+        pass
     
     def obtenFoto(self) -> bytes:
         return None

@@ -92,14 +92,17 @@ class Gestor:
         else:
             self.dataBase.saveProducto(product)
             self.productos[product.id] = product
+            self.funReporte(f"Se ha añadido el producto {product}")
         # Save the request in the DB
         if request.idPeticion is None:
             self.dataBase.savePeticion(request)
+            self.funReporte(f"El {user} ha añadido la petición {request}")
         else:
             for wished in self.dataBase.getWishedsForRequest(request):
                 if wished.mensaje:
                     self.funDelMessage(wished.mensaje)
             self.dataBase.updatePeticion(request)
+            self.funReporte(f"El {user} ha actualizado la petición {request}")
         # Add the request to the user
         user.peticiones[request.idPeticion] = request
         # Cear the temp
@@ -119,10 +122,12 @@ class Gestor:
                 self.funDelMessage(wished.mensaje)
         # Delete the request from the DB
         self.dataBase.deletePeticion(request)
+        self.funReporte(f"Se ha eliminado la petición {request}")
         # Delete the product if isnt in other request
         if not self.dataBase.checkIfProductInRequest(request.producto):
             del self.productos[product.id]
             self.dataBase.deleteProducto(product)
+            self.funReporte(f"Se ha eliminado el producto {product} porque no tiene más peticiones")
 
     def deleteNotification(self, user: Usuario, idPeticion: int, idDeseado: str):
         # Get the request
@@ -224,3 +229,5 @@ class Gestor:
 
         self.funError(text)
 
+    def stopMainLoop(self):
+        self.enBuclePrincipal = False

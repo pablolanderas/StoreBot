@@ -162,7 +162,7 @@ class DataBase:
         query = self.funSelect(TABLAS.Peticiones, ATRIBUTOS.Peticiones.productId, f"{ATRIBUTOS.Peticiones.productId} = {product.id}")
         return len(query) > 0
 
-    def saveUsuario(self, user:Usuario):
+    def saveUsuario(self, user:Usuario, commit=True):
         # Check if the arg is correct
         if type(user) != Usuario:
             raise ValueError("The type of user is incorrect")
@@ -175,7 +175,7 @@ class DataBase:
         for message in user.notificaciones:
             self.saveNotificacion(message, commit=False)
         # Commit the changes
-        self.db.commit()
+        if commit: self.db.commit()
 
     def deleteAllMensajesFromUsuario(self, user: Usuario):
         self.funDelete(TABLAS.Mensajes, (f"{ATRIBUTOS.Mensajes.chatId} = {user.chatId}",))
@@ -196,7 +196,7 @@ class DataBase:
         self.funInsert(TABLAS.Notificacion, commit=commit,
                        messageId=message.messageId, chatId=message.chatId)
 
-    def savePeticion(self, request: Peticion):
+    def savePeticion(self, request: Peticion, commit=True):
         # Check if the arg is correct
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
@@ -216,7 +216,7 @@ class DataBase:
         for wished in request.deseados:
             self.saveDeseado(wished, commit=False)
         # End the query
-        self.db.commit()
+        if commit: self.db.commit()
         return requestId
 
     def deletePeticion(self, request: Peticion):
@@ -228,6 +228,8 @@ class DataBase:
         # Delete the wishes
         for wished in request.deseados:
             self.deleteDeseado(wished, commit=False)
+        # Delete the price wish
+        self.deletePeticionPriceMessage(request, commit=False)
         # Commit the changes
         self.db.commit()
 

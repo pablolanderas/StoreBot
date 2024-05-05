@@ -1,6 +1,7 @@
 from dominio.Producto import Producto
 
 from requests import get as getRequest
+from bs4 import BeautifulSoup
 
 DIR_PETICION = "https://www.zara.com/es/es/products-details?productIds="
 HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:100.0) Gecko/20100101 Firefox/100.0' }
@@ -13,9 +14,11 @@ class ProductoZara(Producto):
 
     descarga : dict
     codigoProdcucto : str
+    urlFoto : str
 
     def __init__(self, url, id) -> None:
         self.codigoProdcucto = obtenerCodigoProdcucto(url)
+        self.urlFoto = None
         super().__init__(url, id)
 
     def descargaDatos(self) -> None:
@@ -50,6 +53,37 @@ class ProductoZara(Producto):
         return prec
     
     def obtenFoto(self) -> bytes:
+        if self.urlFoto is None:
+            return self.obtenFotoBasica()
+        return getRequest(self.urlFoto, headers=HEADERS).content
+
+    def iniciaFoto(self) -> None:
+        pagWeb = getRequest(self.url, headers=HEADERS)
+        if pagWeb.status_code != 200: 
+            return 
+        # Encontrar el html original
+        soup = BeautifulSoup(pagWeb.text, 'html.parser')
+        head_tag = soup.head
+        url = None
+        for tag in head_tag.find_all('meta'):
+            if cont:=tag.get('content', False):
+                dividido = cont.split("URL=")
+                if len(dividido) == 2:
+                    url = "http://"+ DOMAIN_ZARA + dividido[1][1:-1]
+                    break
+        if url is None:
+            return
+        # Encontrar la url de la imagen
+        pagWeb = getRequest(url, headers=HEADERS)
+        if pagWeb.status_code != 200: 
+            return
+        soup = BeautifulSoup(pagWeb.text, 'html.parser')
+        head_tag = soup.head
+        og_image_meta = head_tag.find('meta', {'property': 'og:image'})
+        if og_image_meta:
+            self.urlFoto = og_image_meta['content']
+
+    def obtenFotoBasica(self) -> bytes:
         return open("./resources/logoZara.jpg", "rb")
     
     def __eq__(self, __value: object) -> bool:
