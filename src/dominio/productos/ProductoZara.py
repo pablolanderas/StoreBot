@@ -1,4 +1,5 @@
 from dominio.Producto import Producto
+from os import path
 
 from requests import get as getRequest
 from bs4 import BeautifulSoup
@@ -84,7 +85,7 @@ class ProductoZara(Producto):
             self.urlFoto = og_image_meta['content']
 
     def obtenFotoBasica(self) -> bytes:
-        return open("./resources/logoZara.jpg", "rb")
+        return open(path.join(".", "resources", "logoZara.jpg"), "rb")
     
     def __eq__(self, __value: object) -> bool:
         return type(__value) == ProductoZara and __value.codigoProdcucto == self.codigoProdcucto

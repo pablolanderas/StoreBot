@@ -66,7 +66,7 @@ def main():
 
 if __name__ == "__main__":
     # Move to the file directory
-    dirAct = "\\".join(__file__.split("\\")[:-1])
+    dirAct = path.dirname(path.abspath(__file__))
     chdir(dirAct)
 
     # Execute the main

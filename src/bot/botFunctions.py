@@ -1,4 +1,5 @@
 from dominio import Peticion, Mensaje
+from os import path
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -56,7 +57,7 @@ def START_VIEW():
     text = f"{negrita_html('Bienvenido a StoreBot')}\n\n"
     text += f"{subrayado_html('Estos son las funciones que puedes hacer:')}\n" 
     # The photo
-    photo = open("./resources/TiendaOnline.jpg", "rb")
+    photo = open(path.join(".", "resources", "TiendaOnline.jpg"), "rb")
     # The buttones
     buttons = []
     for cmd, shortText, longText in COMANDOS[1:]:
@@ -70,7 +71,7 @@ def HELP_VIEW():
     for cmd, shortText, longText in COMANDOS:
         text += f"{subrayado_html(negrita_html(shortText))}: {longText}\n\n"
     # The photo
-    photo = open("./resources/ayuda.png", "rb")
+    photo = open(path.join(".", "resources", "ayuda.png"), "rb")
     # The buttones
     buttons = [[("Volver inicio", "cmd_start")]]
 
@@ -80,7 +81,7 @@ def PRODUCT_LIST_HEADER_VIEW():
     # The text
     text = negrita_html(subrayado_html("Lista de productos:"))+"\n"+BARRA_SEPARADORA
     # The photo
-    photo = open("./resources/lista.png", "rb")
+    photo = open(path.join(".", "resources", "lista.png"), "rb")
     # The buttones
     buttons = None
 
@@ -116,7 +117,7 @@ def ADD_PRODUCT_VIEW():
     # The text
     text = "Introduce el URL del producto que quieres comprobar"
     # The photo
-    photo = open("./resources/enlace.png", "rb")
+    photo = open(path.join(".", "resources", "enlace.png"), "rb")
     # The buttones
     buttons = [[("Volver inicio", "cmd_start")]]
 
