@@ -1,6 +1,9 @@
 # CONSTANTES
 src/constantes/Constantes.py
 
+# Base de datos
+src/dataBase/database.db
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
