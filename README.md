@@ -34,7 +34,7 @@ Despues hay que activar el entorno virutal, este paso se ha de realizar siempre 
 
 Ahora habria que descargar las dependencias del proyecto, para esto hay que introducir el siguiente comando:
 
-    pip install -r .\dsg\dependencies
+    pip install -r .\dsg\dependencies.txt
 
 Complentar la plantilla de las constantes con el token del bot y llamar al archilvo ``Constantes.py``. Opcionalmente, puedes escribir dos ``ChatId`` para que los reportes y errores del bot los notifique por esos chats. En caso de no escribir estas variables, dejar el valor de esas a ``None`` y la informacion unicamente se escribira por la consola
 

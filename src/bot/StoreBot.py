@@ -5,6 +5,7 @@ from bot.botFunctions import generateButtons, negrita_html, HTML_FORMAT, START_V
 
 from telebot import ExceptionHandler, TeleBot
 from telebot.types import BotCommand
+from telebot.apihelper import ApiTelegramException
 
 
 class StoreBot(TeleBot):
@@ -47,7 +48,7 @@ class StoreBot(TeleBot):
             self.buttonsControler(user, call.data)
 
     def buttonsControler(self, user: Usuario, data: str):
-        commands = data.split()
+        commands = list(map(lambda x:x.replace("_-_", " "), data.split()))
         if not commands: return
         match commands.pop(0):
             case "cmd_start":
@@ -75,6 +76,16 @@ class StoreBot(TeleBot):
                 match commands.pop(0):
                     case "addTags":
                         user.tagsTemporal = []
+                        temp = user.temporal.producto.tags
+                        # Delete the already added tags
+                        for des in user.temporal.deseados:
+                            # TODO
+                            pass
+                        # If the tag is unique continue
+                        while type(temp) == dict and len(temp) == 1:
+                            key, value = list(temp.items())[0]
+                            temp = list(value)
+                            user.tagsTemporal.append(key)
                         self.showAddingTagsToRequest(user)
                     case "save":
                         self.manager.saveTemporalRequest(user)
@@ -91,6 +102,12 @@ class StoreBot(TeleBot):
                             return
                         user.tagsTemporal.append(tag)
                         temp = temp[tag]
+                        # If the tag is unique continue
+                        while type(temp) == dict and len(temp) == 1:
+                            key, value = list(temp.items())[0]
+                            temp = list(value)
+                            user.tagsTemporal.append(key)
+                        # Check if the tag is the last
                         if type(temp) != dict:
                             extraMessage = None
                             des = Deseado(None, None, user.tagsTemporal, user.temporal)
@@ -127,6 +144,7 @@ class StoreBot(TeleBot):
         # Exit in case of bad window
         if not user.anhadiendoProducto or user.temporal is not None: return
         # Start the product
+        msj = self.sendMessage(user, "Cargando producto...", saveMessage=False)
         answer = self.manager.startProduct(user, message.text)
         match answer:
             case -1:
@@ -135,6 +153,7 @@ class StoreBot(TeleBot):
                 self.sendMessage(user, "El producto que estas intentando añadir no es correcto o no existe")
             case 0:
                 self.showAddingRequest(user)
+        self.deleteMessage(msj)
 
     def cmd_start(self, user:Usuario):
         self.copyUsersMessagesToDelete(user)
@@ -196,8 +215,14 @@ class StoreBot(TeleBot):
         # Delete the las messages
         self.deleteCopiedMessages()
 
-    def deleteMessage(self, message: Mensaje):
-        self.delete_message(message.chatId, message.messageId)
+    def deleteMessage(self, message: Mensaje) -> bool:
+        try:
+            self.delete_message(message.chatId, message.messageId)
+            return True
+        except ApiTelegramException as e:
+            if e.error_code == 400 and e.description == "Bad Request: message to delete not found":
+                return False
+            raise e
 
     def sendMessage(self, user:Usuario, text:str, buttons=None, 
                     parseMode="html", saveMessage=True, photo:bytes=None) -> Mensaje:
@@ -261,7 +286,7 @@ class StoreBot(TeleBot):
         # Show the request
         types = []
         for key in temp.keys():
-            types.append((key, f"add_product tagSelected {key}"))
+            types.append((key, f"add_product tagSelected {key.replace(' ', '_-_')}"))
         buttons = []
         while types:
             buttons.append(types[:3])

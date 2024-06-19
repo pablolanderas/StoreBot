@@ -9,8 +9,8 @@ from os.path import exists
 from os import chdir, path, getcwd
 from threading import Thread
 
-DIR_DATABASE = "./dataBase/database.db"
-DIR_SQL = "./dataBase/database.sql"
+DIR_DATABASE = path.join(".", "dataBase", "database.db")
+DIR_SQL = path.join(".", "dataBase", "database.sql")
 DEVELOP = True
 
 def main():
@@ -33,7 +33,7 @@ def main():
     Gestor.funReporte = lambda obj, x: print("[INFO]:{", x, "}")
 
     # Load the database
-    db = DataBase("./dataBase/database.db")
+    db = DataBase(path.join(".", "dataBase", "database.db"))
     # Load the database to the classes
     Peticion.dataBase = db
     # Initialize the gestor
