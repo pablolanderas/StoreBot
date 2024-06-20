@@ -3,6 +3,7 @@ src/constantes/Constantes.py
 
 # Base de datos
 src/dataBase/database.db
+src/avisosMantenimiento.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
