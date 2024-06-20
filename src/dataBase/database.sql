@@ -5,7 +5,7 @@ CREATE TABLE Productos (
 
 CREATE TABLE Usuarios (
     chatId INTEGER NOT NULL PRIMARY KEY,
-    username VARCHAR NOT NULL
+    username VARCHAR
 );
 
 CREATE TABLE TagName (
