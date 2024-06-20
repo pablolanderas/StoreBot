@@ -8,12 +8,13 @@ from os.path import exists
 
 from os import chdir, path, getcwd
 from threading import Thread
+from time import sleep
 
 DIR_DATABASE = path.join(".", "dataBase", "database.db")
 DIR_SQL = path.join(".", "dataBase", "database.sql")
 DEVELOP = True
 
-def main():
+def main(test=False):
 
     # Start the database if not exists
     if not exists(DIR_DATABASE):
@@ -59,9 +60,11 @@ def main():
     Gestor.funReporte(Gestor, f"Gestor iniciado con el pid [{gestor_thread.ident}]")
     bot_thread.start()
     Gestor.funReporte(StoreBot, f"Bot iniciado con el pid [{bot_thread.ident}]")
-    input("[ Press enter to stop the bot ]")
-    bot.stop_polling()
-    gestor.stopMainLoop()
+    sleep(3)
+    if test:
+        input("[ Press enter to stop the bot ]\n")
+        bot.stop_polling()
+        gestor.stopMainLoop()
 
 
 if __name__ == "__main__":
