@@ -1,11 +1,13 @@
 from telebot.handler_backends import HandlerBackend
 from telebot.storage import StateMemoryStorage, StateStorageBase
 from dominio import Mensaje,  Gestor, Usuario, Deseado, Peticion
-from bot.botFunctions import generateButtons, negrita_html, HTML_FORMAT, START_VIEW, HELP_VIEW, PRODUCT_LIST_HEADER_VIEW, PRODUCT_LIST_FOOTER_VIEW, REQUEST_VIEW, ADD_PRODUCT_VIEW
+from bot.botFunctions import generateButtons, delUsed, negrita_html, HTML_FORMAT, START_VIEW, HELP_VIEW, PRODUCT_LIST_HEADER_VIEW, PRODUCT_LIST_FOOTER_VIEW, REQUEST_VIEW, ADD_PRODUCT_VIEW
 
 from telebot import ExceptionHandler, TeleBot
 from telebot.types import BotCommand
 from telebot.apihelper import ApiTelegramException
+
+from copy import deepcopy
 
 
 class StoreBot(TeleBot):
@@ -13,6 +15,7 @@ class StoreBot(TeleBot):
     __copiedMessages : list[Mensaje]
     manager : Gestor
     inloop : bool
+    notifyError = None
 
     def __init__(self, token: str, gestor: Gestor, parse_mode: str | None = None, threaded: bool | None = True, skip_pending: bool | None = False, num_threads: int | None = 2, next_step_backend: HandlerBackend | None = None, reply_backend: HandlerBackend | None = None, exception_handler: ExceptionHandler | None = None, last_update_id: int | None = 0, suppress_middleware_excepions: bool | None = False, state_storage: StateStorageBase | None = ..., use_class_middlewares: bool | None = False, disable_web_page_preview: bool | None = None, disable_notification: bool | None = None, protect_content: bool | None = None, allow_sending_without_reply: bool | None = None, colorful_logs: bool | None = False):
         super().__init__(token, parse_mode, threaded, skip_pending, num_threads, next_step_backend, reply_backend, exception_handler, last_update_id, suppress_middleware_excepions, state_storage, use_class_middlewares, disable_web_page_preview, disable_notification, protect_content, allow_sending_without_reply, colorful_logs)
@@ -35,17 +38,26 @@ class StoreBot(TeleBot):
     def inicializeCommands(self) -> None:
         @self.message_handler(func=lambda message: True and not message.text.startswith('/start'))
         def start_caller(message): 
-            user, message = self.getUserAndMessageFromBotsMessageType(message, True)
-            self.messageReciber(user, message)
+            try:
+                user, message = self.getUserAndMessageFromBotsMessageType(message, True)
+                self.messageReciber(user, message)
+            except Exception as e:
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
         @self.message_handler(commands=["start"])
         def start_caller(message): 
-            user, _ = self.getUserAndMessageFromBotsMessageType(message, True)
-            self.buttonsControler(user, "cmd_start")
+            try:
+                user, _ = self.getUserAndMessageFromBotsMessageType(message, True)
+                self.buttonsControler(user, "cmd_start")
+            except Exception as e:
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
         # Manejador de CallbackQuery
         @self.callback_query_handler(func=lambda call: True)
         def callback_query_handler(call):
-            user, _ = self.getUserAndMessageFromBotsMessageType(call.message, False)
-            self.buttonsControler(user, call.data)
+            try:
+                user, _ = self.getUserAndMessageFromBotsMessageType(call.message, False)
+                self.buttonsControler(user, call.data)
+            except Exception as e:
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
 
     def buttonsControler(self, user: Usuario, data: str):
         commands = list(map(lambda x:x.replace("_-_", " "), data.split()))
@@ -77,10 +89,6 @@ class StoreBot(TeleBot):
                     case "addTags":
                         user.tagsTemporal = []
                         temp = user.temporal.producto.tags
-                        # Delete the already added tags
-                        for des in user.temporal.deseados:
-                            # TODO
-                            pass
                         # If the tag is unique continue
                         while type(temp) == dict and len(temp) == 1:
                             key, value = list(temp.items())[0]
@@ -111,12 +119,9 @@ class StoreBot(TeleBot):
                         if type(temp) != dict:
                             extraMessage = None
                             des = Deseado(None, None, user.tagsTemporal, user.temporal)
-                            if des in user.temporal.deseados:
-                                extraMessage = "Ya habias añadido este aviso"
-                            else:
-                                user.temporal.deseados.append(des)
-                                user.tagsTemporal = []
-                            self.showAddingRequest(user, extraMessage=extraMessage)
+                            user.temporal.deseados.append(des)
+                            user.tagsTemporal = []
+                            self.showAddingRequest(user)
                         else:
                             self.showAddingTagsToRequest(user)
                     case "cancelAddTags":
@@ -271,16 +276,22 @@ class StoreBot(TeleBot):
             [("Limpiar avisos", "add_product cleanTags")],
             [("Guardar", "add_product save"), ("Cancelar", "cmd_start")]
         ]
+        self.showRequest(user.temporal, buttons)
         # Show the extra message
         if extraMessage is not None:
             self.sendMessage(user, extraMessage)
-        self.showRequest(user.temporal, buttons)
         # Delete the copied messgaes
         self.deleteCopiedMessages()
 
     def showAddingTagsToRequest(self, user):
         self.copyUsersMessagesToDelete(user)
-        temp = user.temporal.producto.tags
+        temp = deepcopy(user.temporal.producto.tags)        
+        # Delete the already added tags
+        delUsed(temp, user.temporal.deseados)
+        # If there are no more tags
+        if not temp:
+            self.showAddingRequest(user, extraMessage="No hay mas tags para añadir")
+            return
         for key in user.tagsTemporal:
             temp = temp[key]
         # Show the request

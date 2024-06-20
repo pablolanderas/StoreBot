@@ -34,6 +34,22 @@ def funToDeleteMessage(peticion: Peticion, message: Mensaje, bot):
     message.chatId = peticion.usuario.chatId
     bot.deleteMessage(message)
 
+def delUsed(options: dict, deseados: list[list[str]]) -> list[list[str]]:
+    def recursivo(obj:dict):
+        for k, v in list(obj.items()):
+            if type(v) == dict:
+                recursivo(v)
+            if not v: del obj[k]
+
+    for deseado in deseados:
+        c = options
+        for k in deseado.tags[:-1]:
+            c = c[k]
+        del c[deseado.tags[-1]]
+        
+    recursivo(options)
+    return options 
+
 # The formats
 HTML_FORMAT = "html"
 

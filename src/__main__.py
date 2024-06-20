@@ -9,10 +9,10 @@ from os.path import exists
 from os import chdir, path, getcwd
 from threading import Thread
 from time import sleep
+from sys import argv
 
 DIR_DATABASE = path.join(".", "dataBase", "database.db")
 DIR_SQL = path.join(".", "dataBase", "database.sql")
-DEVELOP = True
 
 def main(test=False):
 
@@ -41,17 +41,20 @@ def main(test=False):
     gestor = Gestor(db)
     # Initialize the bot
     bot = StoreBot(BOT_TOKEN, gestor)
-    # The users of the chats
-    if not DEVELOP:
-        userAvisos = Usuario(None, ID_CHAT_AVISOS)
-        userErrores = Usuario(None, ID_CHAT_ERRORES)
-        Gestor.funError = lambda obt, x: bot.sendMessage(userErrores, x, saveMessage=False, parseMode=HTML_FORMAT)
-        Gestor.funReporte = lambda obj, x: bot.sendMessage(userAvisos, x, saveMessage=False, parseMode=HTML_FORMAT)
     # Finalize the reportesrs
     Peticion.funcionNotificarUsuario = lambda peticion, message, codigo: funToSendAdvise(peticion, message, codigo, bot)
     Peticion.funcionEliminaNotificacion = lambda peticion, message: funToDeleteMessage(peticion, message, bot)
     gestor.funDelMessage = lambda message: bot.deleteMessage(message)
     gestor.funNotificateUser = lambda user, message: bot.sendMessage(user, message, parseMode=HTML_FORMAT)
+    bot.notifyError = lambda obt, x: print("[ERROR]:{", x, "}")
+    if not test:
+        # The users of the chats
+        userAvisos = Usuario(None, ID_CHAT_AVISOS)
+        userErrores = Usuario(None, ID_CHAT_ERRORES)
+        funError = lambda obt, x: bot.sendMessage(userErrores, x, saveMessage=False, parseMode=HTML_FORMAT)
+        Gestor.funError = funError
+        bot.notifyError = funError
+        Gestor.funReporte = lambda obj, x: bot.sendMessage(userAvisos, x, saveMessage=False, parseMode=HTML_FORMAT)
     # Create the threads
     gestor_thread = Thread(target=gestor.startMainLoop)
     bot_thread = Thread(target=bot.infinity_polling)
@@ -73,4 +76,11 @@ if __name__ == "__main__":
     chdir(dirAct)
 
     # Execute the main
-    main()
+    tests = False
+    if len(argv) > 1:
+        if argv[1] == "test":
+            tests = True
+        else:
+            print("[ERROR]:{Argumento invalido}")
+            exit(1)
+    main(tests)
