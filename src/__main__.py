@@ -38,7 +38,7 @@ def main(test=False):
     # Load the database to the classes
     Peticion.dataBase = db
     # Initialize the gestor
-    gestor = Gestor(db)
+    gestor = Gestor(db, False)
     # Initialize the bot
     bot = StoreBot(BOT_TOKEN, gestor)
     # Finalize the reportesrs
@@ -56,6 +56,10 @@ def main(test=False):
         bot.notifyError = funError
         Gestor.funReporte = lambda obj, x: bot.sendMessage(userAvisos, x, saveMessage=False, parseMode=HTML_FORMAT)
     # Create the threads
+    Gestor.funReporte(Gestor, f"Inicialdo el bot")
+    Gestor.funReporte(Gestor, f"Iniciando el gestor...")
+    gestor.dataBase.loadGestorData(gestor)
+    Gestor.funReporte(Gestor, f"Gestor iniciado")
     gestor_thread = Thread(target=gestor.startMainLoop)
     bot_thread = Thread(target=bot.infinity_polling)
     # Start the threads
