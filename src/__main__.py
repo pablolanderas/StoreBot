@@ -19,10 +19,10 @@ def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
     # Restaurar el manejador de señal
     signal(SIGTERM, SIG_DFL)
     # Enviar mensajes
-    foto = open(path.join(".", "resources", "mantenimiento.png"), "rb")
     msj_txt = "El sistema se encuentra en mantenimiento, por favor espere unos minutos"
     mensajes = []
     for user in gestor.usuarios.values():
+        foto = open(path.join(".", "resources", "mantenimiento.png"), "rb")
         bot.copyUsersMessagesToDelete(user)
         msj = bot.sendMessage(user, msj_txt, saveMessage=False, photo=foto)
         bot.deleteCopiedMessages(user)
