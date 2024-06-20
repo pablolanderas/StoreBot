@@ -12,7 +12,7 @@ from copy import deepcopy
 
 class StoreBot(TeleBot):
     
-    __copiedMessages : list[Mensaje]
+    __copiedMessages : dict[str:list[Mensaje]]
     manager : Gestor
     inloop : bool
     notifyError = None
@@ -27,7 +27,7 @@ class StoreBot(TeleBot):
         self.inicializeCommands()
         self.set_my_commands((BotCommand("start", "Comienza el bot"),))
         # Inicialize variables
-        self.__copiedMessages = []
+        self.__copiedMessages = {}
 
     def startMainLoop(self):
         self.inloop = True
@@ -169,7 +169,7 @@ class StoreBot(TeleBot):
         text, photo, buttons, parseMode = START_VIEW()
         self.sendMessage(user, text, buttons, parseMode, photo=photo)
         # Delete the las messages
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)
 
     def cmd_help(self, user:Usuario):
         self.copyUsersMessagesToDelete(user)
@@ -180,7 +180,7 @@ class StoreBot(TeleBot):
         text, photo, buttons, parseMode = HELP_VIEW()
         self.sendMessage(user, text, buttons, parseMode, photo=photo)
         # Delete the las messages
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)
 
     def cmd_product_list(self, user:Usuario):
         self.copyUsersMessagesToDelete(user)
@@ -204,7 +204,7 @@ class StoreBot(TeleBot):
         text, photo, buttons, parseMode = PRODUCT_LIST_FOOTER_VIEW()
         self.sendMessage(user, text, buttons, parseMode, photo=photo)
         # Delete the las messages
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)
 
     def cmd_add_product(self, user:Usuario, notice: str=None):
         self.copyUsersMessagesToDelete(user)
@@ -218,7 +218,7 @@ class StoreBot(TeleBot):
         text, photo, buttons, parseMode = ADD_PRODUCT_VIEW()
         self.sendMessage(user, text, buttons, parseMode, photo=photo)
         # Delete the las messages
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)
 
     def deleteMessage(self, message: Mensaje) -> bool:
         try:
@@ -257,12 +257,14 @@ class StoreBot(TeleBot):
 
     def copyUsersMessagesToDelete(self, user: Usuario):
         messages = self.manager.deleteUsersMessages(user)
-        self.__copiedMessages.extend(messages)
+        if user.chatId not in self.__copiedMessages:
+            self.__copiedMessages[user.chatId] = []
+        self.__copiedMessages[user.chatId].extend(messages)
 
-    def deleteCopiedMessages(self):
-        for message in self.__copiedMessages:
+    def deleteCopiedMessages(self, user: Usuario):
+        for message in self.__copiedMessages[user.chatId]:
             self.deleteMessage(message)
-        self.__copiedMessages.clear()
+        self.__copiedMessages[user.chatId].clear()
 
     def showRequest(self, request:Peticion, buttons=None):
         text, photo, _, parseMode = REQUEST_VIEW(request)
@@ -281,7 +283,7 @@ class StoreBot(TeleBot):
         if extraMessage is not None:
             self.sendMessage(user, extraMessage)
         # Delete the copied messgaes
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)
 
     def showAddingTagsToRequest(self, user):
         self.copyUsersMessagesToDelete(user)
@@ -306,4 +308,4 @@ class StoreBot(TeleBot):
 
         self.showRequest(user.temporal, buttons)
         # Delete the copied messgaes
-        self.deleteCopiedMessages()
+        self.deleteCopiedMessages(user)

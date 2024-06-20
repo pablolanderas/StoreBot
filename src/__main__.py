@@ -6,13 +6,41 @@ from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES
 from dataBase.DataBase import DataBase
 from os.path import exists
 
-from os import chdir, path, getcwd
+from os import chdir, path, getcwd, kill, getpid
 from threading import Thread
 from time import sleep
 from sys import argv
+from signal import signal, SIGTERM, SIG_DFL
 
 DIR_DATABASE = path.join(".", "dataBase", "database.db")
 DIR_SQL = path.join(".", "dataBase", "database.sql")
+
+def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
+    # Restaurar el manejador de señal
+    signal(SIGTERM, SIG_DFL)
+    # Enviar mensajes
+    foto = open(path.join(".", "resources", "mantenimiento.png"), "rb")
+    msj_txt = "El sistema se encuentra en mantenimiento, por favor espere unos minutos"
+    mensajes = []
+    for user in gestor.usuarios.values():
+        bot.copyUsersMessagesToDelete(user)
+        msj = bot.sendMessage(user, msj_txt, saveMessage=False, photo=foto)
+        bot.deleteCopiedMessages(user)
+        mensajes.append(f"{msj.chatId}={msj.messageId}")
+    # Escribir el archivo
+    with open(path.join(".", "avisosMantenimiento.txt"), "w") as file:
+        file.write("\n".join(mensajes))
+    # Llamar a la funcion original
+    kill(getpid(), SIGTERM)
+
+def restoreAllUsersMaintenance(bot: StoreBot):
+    if path.exists(path.join(".", "avisosMantenimiento.txt")):
+        with open(path.join(".", "avisosMantenimiento.txt"), "r") as file:
+            for line in file.readlines():
+                chatId, messageId = line.strip().split("=")
+                msj = Mensaje(None, chatId=chatId, messageId=messageId)
+                bot.deleteMessage(msj)
+                bot.cmd_start(Usuario(None, chatId))
 
 def main(test=False):
 
@@ -67,10 +95,15 @@ def main(test=False):
     Gestor.funReporte(Gestor, f"Gestor iniciado con el pid [{gestor_thread.ident}]")
     bot_thread.start()
     Gestor.funReporte(StoreBot, f"Bot iniciado con el pid [{bot_thread.ident}]")
+    # Restore the messages
+    restoreAllUsersMaintenance(bot)
+    signal(SIGTERM, lambda x, y:notifyAllUsersMaintenance(bot, gestor))
     sleep(3)
+    # Stop the threads
     if test:
         input("[ Press enter to stop the bot ]\n")
         bot.stop_polling()
+        notifyAllUsersMaintenance(bot, gestor)
         gestor.stopMainLoop()
 
 
