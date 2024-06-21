@@ -8,6 +8,7 @@ from telebot.types import BotCommand
 from telebot.apihelper import ApiTelegramException
 
 from copy import deepcopy
+from traceback import format_exception
 
 
 class StoreBot(TeleBot):
@@ -41,23 +42,29 @@ class StoreBot(TeleBot):
             try:
                 user, message = self.getUserAndMessageFromBotsMessageType(message, True)
                 self.messageReciber(user, message)
-            except Exception as e:
-                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
+            except Exception as error:
+                errList = format_exception(type(error), error, error.__traceback__)
+                errList.insert(0, errList[-1])
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + "".join(errList[:-1]) + '" }')
         @self.message_handler(commands=["start"])
         def start_caller(message): 
             try:
                 user, _ = self.getUserAndMessageFromBotsMessageType(message, True)
                 self.buttonsControler(user, "cmd_start")
-            except Exception as e:
-                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
+            except Exception as error:
+                errList = format_exception(type(error), error, error.__traceback__)
+                errList.insert(0, errList[-1])
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + "".join(errList[:-1]) + '" }')
         # Manejador de CallbackQuery
         @self.callback_query_handler(func=lambda call: True)
         def callback_query_handler(call):
             try:
                 user, _ = self.getUserAndMessageFromBotsMessageType(call.message, False)
                 self.buttonsControler(user, call.data)
-            except Exception as e:
-                self.notifyError(self, 'Error en la ejecucion del bot: { "' + str(e) + '" }')
+            except Exception as error:
+                errList = format_exception(type(error), error, error.__traceback__)
+                errList.insert(0, errList[-1])
+                self.notifyError(self, 'Error en la ejecucion del bot: { "' + "".join(errList[:-1]) + '" }')
 
     def buttonsControler(self, user: Usuario, data: str):
         commands = list(map(lambda x:x.replace("_-_", " "), data.split()))
@@ -230,13 +237,15 @@ class StoreBot(TeleBot):
             raise e
 
     def sendMessage(self, user:Usuario, text:str, buttons=None, 
-                    parseMode="html", saveMessage=True, photo:bytes=None) -> Mensaje:
+                    parseMode="html", saveMessage=True, photo:bytes=None, disableNotification=False) -> Mensaje:
         if buttons is None: buttons = []
         markup = generateButtons(buttons)
+        # TODO: Gestionar el tamaño del mensaje excesivo
+        text = text[:4096]
         if photo is None:
-            message = self.send_message(user.chatId, text, parse_mode=parseMode, reply_markup=markup)
+            message = self.send_message(user.chatId, text, parse_mode=parseMode, reply_markup=markup, disable_notification=disableNotification)
         else:
-            message = self.send_photo(user.chatId, photo, text, parse_mode=parseMode, reply_markup=markup)
+            message = self.send_photo(user.chatId, photo, text, parse_mode=parseMode, reply_markup=markup, disable_notification=disableNotification)
         message = Mensaje(message)
         if saveMessage: self.manager.saveMessage(message)
         return message

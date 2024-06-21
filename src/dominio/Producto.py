@@ -1,3 +1,4 @@
+from requests.exceptions import ConnectionError, Timeout
 
 class Producto:
 
@@ -33,9 +34,13 @@ class Producto:
 
     def actualiza(self) -> None:
         # Descargamos los datos necesarios
-        self.descargaDatos()
+        try:
+            self.descargaDatos()
+        except (ConnectionError, Timeout):
+            return False
         # Actualizamos los valores del producto
         self.calculaValores()   
+        return True
 
     def compruebaDeseadosCorrecto(self, cadena:list):
         temp = self.tags

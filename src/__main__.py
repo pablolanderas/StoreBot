@@ -6,7 +6,7 @@ from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES
 from dataBase.DataBase import DataBase
 from os.path import exists
 
-from os import chdir, path, getcwd, kill, getpid
+from os import chdir, path, getcwd, kill, getpid, remove
 from threading import Thread
 from time import sleep
 from sys import argv
@@ -24,7 +24,7 @@ def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
     for user in gestor.usuarios.values():
         foto = open(path.join(".", "resources", "mantenimiento.png"), "rb")
         bot.copyUsersMessagesToDelete(user)
-        msj = bot.sendMessage(user, msj_txt, saveMessage=False, photo=foto)
+        msj = bot.sendMessage(user, msj_txt, saveMessage=False, photo=foto, disableNotification=True)
         bot.deleteCopiedMessages(user)
         mensajes.append(f"{msj.chatId}={msj.messageId}")
     # Escribir el archivo
@@ -34,13 +34,15 @@ def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
     kill(getpid(), SIGTERM)
 
 def restoreAllUsersMaintenance(bot: StoreBot):
-    if path.exists(path.join(".", "avisosMantenimiento.txt")):
-        with open(path.join(".", "avisosMantenimiento.txt"), "r") as file:
+    avisosPath = path.join(".", "avisosMantenimiento.txt")
+    if path.exists(avisosPath):
+        with open(avisosPath, "r") as file:
             for line in file.readlines():
                 chatId, messageId = line.strip().split("=")
                 msj = Mensaje(None, chatId=chatId, messageId=messageId)
                 bot.deleteMessage(msj)
                 bot.cmd_start(Usuario(None, chatId))
+        remove(avisosPath)
 
 def main(test=False):
 
@@ -97,6 +99,7 @@ def main(test=False):
     Gestor.funReporte(StoreBot, f"Bot iniciado con el pid [{bot_thread.ident}]")
     # Restore the messages
     restoreAllUsersMaintenance(bot)
+    Gestor.funReporte(StoreBot, f"Reiniciados los chats")
     signal(SIGTERM, lambda x, y:notifyAllUsersMaintenance(bot, gestor))
     sleep(3)
     # Stop the threads

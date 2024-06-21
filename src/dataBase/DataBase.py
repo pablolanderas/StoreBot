@@ -177,6 +177,10 @@ class DataBase:
         # Commit the changes
         if commit: self.db.commit()
 
+    def updateUsuarioUsername(self, user:Usuario, commit=True):
+        self.funUpdate(TABLAS.Usuarios, f"{ATRIBUTOS.Usuarios.chatId} = {user.chatId}", commit=False, username=user.username)
+        if commit: self.db.commit()
+
     def deleteAllMensajesFromUsuario(self, user: Usuario):
         self.funDelete(TABLAS.Mensajes, (f"{ATRIBUTOS.Mensajes.chatId} = {user.chatId}",))
 

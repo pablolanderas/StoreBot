@@ -4,9 +4,11 @@ from dominio.Mensaje import Mensaje
 from dominio.Peticion import Peticion
 from dominio.Deseado import Deseado
 from bot.botFunctions import enclace_html
+from traceback import format_exception
 from time import sleep
 
 from dataBase.DataBase import DataBase
+from bot.botFunctions import enclace_html
 
 
 class Gestor:
@@ -36,7 +38,12 @@ class Gestor:
     def getUserFromMessage(self, message: Mensaje) -> Usuario:
         # Return the user if exists
         if message.chatId in self.usuarios:
-            return self.usuarios[message.chatId]
+            user = self.usuarios[message.chatId]
+            # Update the username if changed
+            if user.username != message.username:
+                user.username = message.username
+                self.dataBase.updateUsuarioUsername(user)
+            return user
         # Create the new user
         user = Usuario(message.username, message.chatId)
         self.dataBase.saveUsuario(user)
@@ -178,8 +185,10 @@ class Gestor:
                 product = self.productos.get(key)
                 if product:
                     try:
-                        product.actualiza()
-                        if pintaActualizaciones: print(f"[Actualizado]: {product}")
+                        resp = product.actualiza()
+                        if not resp:
+                            self.funError(f"<b>Error en el bucle de productos</b>\nError al actualizar el producto {product} por un problema de conexión")
+                        elif pintaActualizaciones: print(f"[Actualizado]: {product}")
                     except Exception as e:
                         self.mannageUpdateProductError(e, product, key)
             # Check the requests
@@ -195,7 +204,7 @@ class Gestor:
                     except Exception as e:
                         self.mannageCheckRequestError(e, request, user)
             # Wait 1 minute
-            sleep(5)
+            sleep(60)
 
     def mannageUpdateProductError(self, error: Exception, product: Producto, productKey: int):
         # Delete the requests of the product and notify the user
@@ -208,10 +217,13 @@ class Gestor:
                     text = f"El producto {product} con ID {productKey} se ha eliminado por un error"
                     self.funNotificateUser(user, text)      
         # Notificate the error
+        errList = format_exception(type(error), error, error.__traceback__)
+        errList.insert(0, errList[-1])
         text =  f"<b>Error en el bucle de productos</b>\n"
         text += f"Se eliminio el producto: {product}\n"
+        text += f"Con URL {enclace_html(product.url, product.url)}\n"
         text += f"Con ID {productKey}\n"
-        text += f"Error: \n{error}"
+        text += f"Error: \n{"".join(errList[:-1])}"
         text += "\n----------------"
 
         self.funError(text)
@@ -223,9 +235,11 @@ class Gestor:
         text = f"Se ha eliminado la petición del producto {enclace_html(request.producto.nombre, request.producto.url)} por un error"
         self.funNotificateUser(user, text)
         # Notificate the error
+        errList = format_exception(type(error), error, error.__traceback__)
+        errList.insert(0, errList[-1])
         text =  f"<b>Error en el bucle decomprobación de peticiones</b>\n"
         text += f"Se eliminio la petición: \n{request}\n"
-        text += f"Error: \n{error}"
+        text += f"Error: \n{"".join(errList[:-1])}\n"
 
         self.funError(text)
 
