@@ -223,7 +223,7 @@ class Gestor:
         text += f"Se eliminio el producto: {product}\n"
         text += f"Con URL {enclace_html(product.url, product.url)}\n"
         text += f"Con ID {productKey}\n"
-        text += f"Error: \n{"".join(errList[:-1])}"
+        text += f"Error: \n{''.join(errList[:-1])}"
         text += "\n----------------"
 
         self.funError(text)
@@ -239,7 +239,7 @@ class Gestor:
         errList.insert(0, errList[-1])
         text =  f"<b>Error en el bucle decomprobación de peticiones</b>\n"
         text += f"Se eliminio la petición: \n{request}\n"
-        text += f"Error: \n{"".join(errList[:-1])}\n"
+        text += f"Error: \n{''.join(errList[:-1])}\n"
 
         self.funError(text)
 
