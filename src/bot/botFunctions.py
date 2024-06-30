@@ -39,7 +39,7 @@ def delUsed(options: dict, deseados: list[list[str]]) -> list[list[str]]:
         for k, v in list(obj.items()):
             if type(v) == dict:
                 recursivo(v)
-            if not v: del obj[k]
+            if type(v) is dict and not v: del obj[k]
 
     for deseado in deseados:
         c = options
