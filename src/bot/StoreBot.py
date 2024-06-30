@@ -235,7 +235,7 @@ class StoreBot(TeleBot):
             if e.error_code == 400 and e.description == "Bad Request: message to delete not found":
                 return False
             elif e.error_code == 400 and e.description == "Bad Request: message can't be deleted for everyone":
-                self.notifyError(self, f"Se ha intentado iniciar el bot en un grupo con ChatId = {message.chatId}")
+                self.notifyError(self, f"No se a podido eliminar un mensaje:\nChatId: {message.chatId}\nUserId: {message.userId}\nUserame: {message.username}")
                 return False
             raise e
 
