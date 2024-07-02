@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  storebot:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data

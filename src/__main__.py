@@ -1,7 +1,7 @@
 from dominio import Deseado, Mensaje, Peticion, Producto, Usuario, Gestor
 from bot.StoreBot import StoreBot
 from bot.botFunctions import funToDeleteMessage, funToSendAdvise, HTML_FORMAT
-from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES
+from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES, TESTING, CREATE_DB
 
 from dataBase.DataBase import DataBase
 from os.path import exists
@@ -12,8 +12,9 @@ from time import sleep
 from sys import argv
 from signal import signal, SIGTERM, SIG_DFL
 
-DIR_DATABASE = path.join(".", "dataBase", "database.db")
+DIR_DATABASE = path.join("..", "data", "database.db")
 DIR_SQL = path.join(".", "dataBase", "database.sql")
+DIR_AVISOS_MANTENIMIENTO = path.join("..", "data", "avisosMantenimiento.txt")
 
 def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
     # Restaurar el manejador de señal
@@ -28,34 +29,30 @@ def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
         bot.deleteCopiedMessages(user)
         mensajes.append(f"{msj.chatId}={msj.messageId}")
     # Escribir el archivo
-    with open(path.join(".", "avisosMantenimiento.txt"), "w") as file:
+    with open(DIR_AVISOS_MANTENIMIENTO, "w") as file:
         file.write("\n".join(mensajes))
     # Llamar a la funcion original
     kill(getpid(), SIGTERM)
 
 def restoreAllUsersMaintenance(bot: StoreBot):
-    avisosPath = path.join(".", "avisosMantenimiento.txt")
-    if path.exists(avisosPath):
-        with open(avisosPath, "r") as file:
+    if path.exists(DIR_AVISOS_MANTENIMIENTO):
+        with open(DIR_AVISOS_MANTENIMIENTO, "r") as file:
             for line in file.readlines():
                 chatId, messageId = line.strip().split("=")
                 msj = Mensaje(None, chatId=chatId, messageId=messageId)
                 bot.deleteMessage(msj)
                 bot.cmd_start(Usuario(None, chatId))
-        remove(avisosPath)
+        remove(DIR_AVISOS_MANTENIMIENTO)
 
-def main(test=False):
-
+def main():
+    
     # Start the database if not exists
     if not exists(DIR_DATABASE):
-        # Obtener el path completo de la direccion actual mas DIR_DATABASE
-        dirFInal = path.join(getcwd(), path.normpath(DIR_DATABASE))
-        resp = input("[INFO]:{No existe la base de datos en \""+dirFInal+"\", escribe \"y\" para crearla}")
-        if resp.lower() != "y":
-            print("[INFO]:{Creacion de base de datos cancelada}")
-            return
+        if not CREATE_DB:
+            print("[ERROR]: { The database not exists, and you not want create it, modify it in the .env }")
+            exit(-1)
         DataBase.startDataBase(DIR_DATABASE, DIR_SQL)
-        print("[INFO]:{Database created}")
+        print("[INFO]:{ Database created }")
 
     # Inicialize the reporters
     Peticion.funcionNotificarUsuario = "TODO"
@@ -64,7 +61,7 @@ def main(test=False):
     Gestor.funReporte = lambda obj, x: print("[INFO]:{", x, "}")
 
     # Load the database
-    db = DataBase(path.join(".", "dataBase", "database.db"))
+    db = DataBase(DIR_DATABASE)
     # Load the database to the classes
     Peticion.dataBase = db
     # Initialize the gestor
@@ -77,7 +74,7 @@ def main(test=False):
     gestor.funDelMessage = lambda message: bot.deleteMessage(message)
     gestor.funNotificateUser = lambda user, message: bot.sendMessage(user, message, parseMode=HTML_FORMAT)
     bot.notifyError = lambda obt, x: print("[ERROR]:{", x, "}")
-    if not test:
+    if not TESTING:
         # The users of the chats
         userAvisos = Usuario(None, ID_CHAT_AVISOS)
         userErrores = Usuario(None, ID_CHAT_ERRORES)
@@ -102,12 +99,6 @@ def main(test=False):
     Gestor.funReporte(StoreBot, f"Reiniciados los chats")
     signal(SIGTERM, lambda x, y:notifyAllUsersMaintenance(bot, gestor))
     sleep(3)
-    # Stop the threads
-    if test:
-        input("[ Press enter to stop the bot ]\n")
-        bot.stop_polling()
-        notifyAllUsersMaintenance(bot, gestor)
-        gestor.stopMainLoop()
 
 
 if __name__ == "__main__":
@@ -115,12 +106,5 @@ if __name__ == "__main__":
     dirAct = path.dirname(path.abspath(__file__))
     chdir(dirAct)
 
-    # Execute the main
-    tests = False
-    if len(argv) > 1:
-        if argv[1] == "test":
-            tests = True
-        else:
-            print("[ERROR]:{Argumento invalido}")
-            exit(1)
-    main(tests)
+    # Start the main function
+    main()
