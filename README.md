@@ -1,16 +1,6 @@
 # StoreBot
 
-***TODOS:***
-
-- Gestionar que hacer con las notificaciones cuando se elimina un Deseado que   
-    ha sido notificado.  
-- Mismo problema cuando se elimina una peticion con el aviso del precio
-- Info "Sobre mi"
-- Gestionar caso de no escribir los chat de aviso del bot en las constantes
-- Gestionar la inicializacion de la base de datos
-- Quitar la base de datos del git
-
-## Indice
+### Indice
 
 1. [Despligue del bot](#depliegue)
 2. [Documentacion](#documentacion)   
@@ -22,29 +12,34 @@
 
 ## Despliegue <a id="depliegue">
 
-*Estos son los pasos para poder desplegar el bot:* 
+Para desplegar el bot, primero hay que crear las variables de entorno, para esto hay que crear un archivo `.env` en el directorio del proyecto. Este archivo debe de tener lo siguiente:
 
-Lo primero es iniciar el entorno virtual ``env`` con el siguiente comando:
-    
-    py -m venv env
+~~~bash
+BOT_TOKEN="{API_KEY_TOKEN}"
+ID_CHAT_AVISOS={CHAT_ID_PARA_AVISOS}
+ID_CHAT_ERRORES={CHAT_ID_PARA_ERRORES}
 
-Despues hay que activar el entorno virutal, este paso se ha de realizar siempre que se salga del mismo para poder ejecutar correctamente el programa. Para poder entrar al entorno virual se haría con el siguiente comando:
+CREATE_DB={CREAR_BASE_DE_DATOS}
+TESTING={MODO_TESTING}
+~~~
 
-    .\env\Scripts\activate
+Cada valor significa lo siguiente:
 
-Ahora habria que descargar las dependencias del proyecto, para esto hay que introducir el siguiente comando:
+- *BOT_TOKEN:* La API Key del bot en el que quieres despegar el servicio
+- *ID_CHAT_AVISOS:* El Id del chat en el que quieres que te llegen los avisos de las acciones que se realizan en el bot, como registros o acciones de los usuarios
+- *ID_CHAT_ERRORES:* El Id del chat en el que quieres que te llegen los errores que saltan durante la ejecución
+- *CREATE_DB*: Indica si quieres que se cree la base de datos durante la ejecución en caso de que no exista. Si no es la primera ejecucion del bot, es recomendable dejarla en `false`, si quieres crearlo dejarlo en `true`
+- *TESTING:* Indicar si quieres que se ejecute en modo de testing, por defecto dejar en `false`
 
-    pip install -r .\dsg\dependencies.txt
+Una vez creado este archivo, simplemente hay que utilizar el siguiente comando:
 
-Complentar la plantilla de las constantes con el token del bot y llamar al archilvo ``Constantes.py``. Opcionalmente, puedes escribir dos ``ChatId`` para que los reportes y errores del bot los notifique por esos chats. En caso de no escribir estas variables, dejar el valor de esas a ``None`` y la informacion unicamente se escribira por la consola
+~~~bash
+docker compose up
+~~~
 
-Por ultimo, puedes ejecutar el bot con el siguiente comando:
+En caso de recibir una actualizacion, añadir `--build` para que actualice el conetenedor con los nuevos cambios
 
-    py .\src\__main__.py
-
-Si en cualquier momento deseas salir del entorno, simplemente seria escribir lo siguiente en el terminal:
-
-    deactivate
+Si quieres que el contenedor corra en segundo plano, se puede utilizar `-d`
 
 ## Documentacion <a id="documentacion">
 
