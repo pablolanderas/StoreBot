@@ -6,15 +6,15 @@ from constantes import BOT_TOKEN, ID_CHAT_AVISOS, ID_CHAT_ERRORES, TESTING, CREA
 from dataBase.DataBase import DataBase
 from os.path import exists
 
-from os import chdir, path, getcwd, kill, getpid, remove
+from os import chdir, path, kill, getpid, remove
 from threading import Thread
 from time import sleep
-from sys import argv
 from signal import signal, SIGTERM, SIG_DFL
 
-DIR_DATABASE = path.join("..", "data", "database.db")
+DIR_DATA= path.join("..", "data")
+DIR_DATABASE = path.join(DIR_DATA, "database.db")
 DIR_SQL = path.join(".", "dataBase", "database.sql")
-DIR_AVISOS_MANTENIMIENTO = path.join("..", "data", "avisosMantenimiento.txt")
+DIR_AVISOS_MANTENIMIENTO = path.join(DIR_DATA, "avisosMantenimiento.txt")
 
 def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
     # Restaurar el manejador de señal
