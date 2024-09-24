@@ -210,4 +210,4 @@ Hecho por Pablo Landeras, estudiante de ingenieria informatica en la universidad
 
 **Contacto**:  
 - Email: pablolanderas@gmail.com  
-- Linkedin: [https://www.linkedin.com/in/pablo-landeras/](#https://www.linkedin.com/in/pablo-landeras/)
+- Linkedin: [https://www.linkedin.com/in/pablo-landeras/](https://www.linkedin.com/in/pablo-landeras/)
