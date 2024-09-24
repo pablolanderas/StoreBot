@@ -23,7 +23,6 @@ class StoreBot(TeleBot):
         # Inicialize the manager
         self.manager = gestor
         self.inloop = False
-        # TODO: Choose the manager call functions
         # Inicialize the commands
         self.inicializeCommands()
         self.set_my_commands((BotCommand("start", "Comienza el bot"),))

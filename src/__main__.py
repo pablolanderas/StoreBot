@@ -9,7 +9,7 @@ from os.path import exists
 from os import chdir, path, kill, getpid, remove
 from threading import Thread
 from time import sleep
-from signal import signal, SIGTERM, SIG_DFL
+from signal import signal, SIGTERM, SIG_DFL, SIGBREAK
 
 DIR_DATA= path.join("..", "data")
 DIR_DATABASE = path.join(DIR_DATA, "database.db")
@@ -17,6 +17,7 @@ DIR_SQL = path.join(".", "dataBase", "database.sql")
 DIR_AVISOS_MANTENIMIENTO = path.join(DIR_DATA, "avisosMantenimiento.txt")
 
 def notifyAllUsersMaintenance(bot: StoreBot, gestor: Gestor):
+    print("Entra en la llamada")
     # Restaurar el manejador de señal
     signal(SIGTERM, SIG_DFL)
     # Enviar mensajes
@@ -89,6 +90,8 @@ def main():
     Gestor.funReporte(Gestor, f"Gestor iniciado")
     gestor_thread = Thread(target=gestor.startMainLoop)
     bot_thread = Thread(target=bot.infinity_polling)
+    # Notificate the main PIDg
+    Gestor.funReporte(Gestor, f"Gestor iniciado con el pid [{gestor_thread.ident}]")
     # Start the threads
     gestor_thread.start()
     Gestor.funReporte(Gestor, f"Gestor iniciado con el pid [{gestor_thread.ident}]")
@@ -97,7 +100,10 @@ def main():
     # Restore the messages
     restoreAllUsersMaintenance(bot)
     Gestor.funReporte(StoreBot, f"Reiniciados los chats")
-    signal(SIGTERM, lambda x, y:notifyAllUsersMaintenance(bot, gestor))
+    print("Iniciado con el PID:", getpid())
+    functionMaintenance = lambda x, y:notifyAllUsersMaintenance(bot, gestor)
+    signal(SIGTERM, functionMaintenance)
+    signal(SIGBREAK, functionMaintenance)
     sleep(3)
 
 

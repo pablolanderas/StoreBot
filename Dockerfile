@@ -6,4 +6,4 @@ COPY . /app
 
 RUN pip install --no-cache-dir -r /app/dsg/dependencies.txt
 
-CMD ["python", "/app/src/__main__.py", "test"]
+CMD ["python", "/app/src/__main__.py"]

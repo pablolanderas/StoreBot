@@ -1,4 +1,7 @@
 from os import environ as varEntorno
+from dotenv import load_dotenv
+
+load_dotenv()
 
 try:
     BOT_TOKEN = varEntorno['BOT_TOKEN']

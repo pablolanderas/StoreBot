@@ -391,19 +391,24 @@ class DataBase:
             """
         return list(map(lambda x:x[0], self.db.execute(query)))
 
-    def getAllProducts(self) -> dict[int:Producto]:
+    def getAllProducts(self, notificator=None) -> dict[int:Producto]:
         productsQuery = self.funSelect(TABLAS.Productos, columns=(
             ATRIBUTOS.Productos.productId, ATRIBUTOS.Productos.url 
         ))
+        index = 1
         products = {}
         for productid, url in productsQuery:
-            product = Producto.inicaProducto(url, productid)
+            product: Producto = Producto.inicaProducto(url, productid)
             products[productid] = product
+            # Notify the notificator
+            if notificator is not None:
+                notificator(f"Caragando producto {index}/{len(productsQuery)}: \"{product.nombre}\"")
+            index+=1
         return products
 
     def loadGestorData(self, gestor):
         # Start with the products
-        gestor.productos.update(self.getAllProducts())
+        gestor.productos.update(self.getAllProducts(gestor.funReporte))
         # Now with the users
         usersQuery = self.funSelect(TABLAS.Usuarios, columns=(
             ATRIBUTOS.Usuarios.username, ATRIBUTOS.Usuarios.chatId
