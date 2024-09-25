@@ -91,7 +91,7 @@ Esta funcion inicializa los siguientes comandos del bot:
 
 **buttonsControler** <a id="buttonsControler">
 
-Esta funcion recibe un usuario y los datos a procesar. Los datos son una cadena de caracteres, en la que hay varaias instrucciones separadas por `_-_`, la primera es el comando a utilizar, y el resto los argumentos que recibe. Gestiona los siguientes comandos
+Esta funcion se lanza cuando el usuario ha pulsado un boton en la interfaz de telegram. Esta recibe un usuario y los datos a procesar. Los datos son una cadena de caracteres, en la que hay varaias instrucciones separadas por `_-_`, la primera es el comando a utilizar, y el resto los argumentos que recibe. Gestiona los siguientes comandos
 
 - *cmd_start*: el comando que se ejecuta cuando se va a la pagina principal del bot, llama a la funcion [`cmd_start`](#cmd_start)
 - *cmd_help*: el comando que se ejecuta cuando se va a la pagina de ayuda del bot, llama a la funcion [`cmd_help`](#cmd_help)
@@ -110,6 +110,61 @@ Esta funcion recibe un usuario y los datos a procesar. Los datos son una cadena 
 - *del_whised*: el comando se utiliza para eliminar un deseado de una peticion recibiendo dos parametros. Primero el id de la peticion y despues el id del deseado. Con estos ids y una llamada al gestor elimina el deseado de la peticion
 
 **messageReciber** <a id="messageReciber">
+
+Esta funcion se lanza cuando el usuario escribe un mensaje en el chat de telegram, siempre que no sea el comando `/start`. Esta funcion recibe el usuario que ha escrito el mensaje y el mensaje que ha escrito. Lo primero que hace es comprobar si el usuario esta en la vista correcta para mostrar un producto, en caso contrario, sale de la funcion. Despues, te avisa de que esta procesando el prodcuto y trata de cargar el producto que ha tratado de añadir el usuario, aqui puede suceder 3 cosas:
+- *Un url la cual no esta en las tiendas disponibles*: en este caso, te avisara de que la pagina que estas intentando añadir no esta disponible
+- *La url es de una tienda disponible pero no correcta o no funciona*: en este caso te avisa de que el producto que estas intentando añadir no es correcto o no existe
+- *El prodcuto es correcto*: en este caso te mostrara la vista del prodcuto llamando a la funcion [`showAddingRequest`](#showAddingRequest)
+
+**cmd_start** <a id="cmd_start">
+
+Esa funcion inicializa los valores del usuario para la interfaz y muestra la vista principal que se obtiene de las vistas del archivo de las funciones del bot en `./src/bot/botFunctions.py`. Recibe el usuario sobre el que se van a realizar las acciones
+
+**cmd_help** <a id="cmd_help">
+
+Esta funcion muestra la vista de de la ayuda que se obtiene de las vistas del archivo de las funciones del bot en `./src/bot/botFunctions.py`. Recibe el usuario sobre el que se van a realizar las acciones
+
+**cmd_product_list** <a id="cmd_product_list">
+
+Esta funcion muestra los productos que esta registrando el usuario. Recibe el usuario sobre el que se van a realizar las acciones. Lo primero que hace es mostrar el principio de la vista que se obtiene de las vistas del archivo de las funciones del bot en `./src/bot/botFunctions.py`, seguido muestra por pantalla todos los productos del usuario, y para acabar muestra el final de la vista que se encuentra tambien en el archivo de las funciones
+
+**cmd_add_product** <a id="cmd_add_product">
+
+Esa funcion inicializa los valores del usuario para añadir un producto y muestra la vista de añadir un producto que se obtiene de las vistas del archivo de las funciones del bot en `./src/bot/botFunctions.py`. Recibe el usuario sobre el que se van a realizar las acciones y un mensaje opcional el cual se puede mostrar antes de la vista
+
+**deleteMessage** <a id="deleteMessage">
+
+Esta funcion elimina un mensaje en el chat del usuario. Esta recibe el mensaje que se quiere eliminar, que debe de tener el id del chat y del mensaje que se quiere eliminar. En caso de eliminarse correctamente devuelve `True`, en caso contrario puede pasar 3 cosas, que no se haya podido eliminar porque ya no existe el mensaje (el usuario lo ha borrado) y en este caso devuelve `False`, tambien puede pasar que no sea capaz de borrarlo porque es el mensaje de un grupo y el bot no puede eliminar esos mensajes, en este caso devuelve `False` y avisa por el canal de error lo que ha pasado. Por ultimo, que sea un error extraño que no esta completado, que en ese caso lance el error.
+
+**sendMessage** <a id="sendMessage">
+
+Esta funcion envia un mensaje a un usuario y lo devuelve una vez enviado. Esta funcion recibe los siguientes valores obligatorios:
+- *user*: el usuario al que se le quiere enviar el mensaje
+- *text*: el texto del mensaje que se quiere enviar, como maximo solo se pueden enviar los 4096 primeros caracteres, por lo que si es de mayor tamaño solo se enviaran esa cantidad de caracteres.
+
+Estos valores ya son opcionales, no son obligatorios:
+- *buttons*: Los botones que va a tener el mensaje, debe de tener un formato especifico. Debe de ser una lista, cada elemento de la lista es una fila, despues cada fila debe de tener una lista, que es cada columna de la fila, y por ultimo, cada columna debe de tener una tupla, en la que el primer valor es el texto que va a aparecer en el boton y el segundo el comando que el boton va a enviar. Aqui un ejemplo de como seria:
+
+    ~~~ python
+    [[("Bot 1", "cmd_1"), ("Bot 2", "cmd_2")], [("Bot 3", "cmd_3")]]
+    ~~~
+
+    Esto, mostraria lo siguiente:
+
+    ~~~
+    -----------------
+    | Bot 1 | Bot 2 |
+    -----------------
+    |     Bot 3     |
+    -----------------
+    ~~~
+
+- *parseMode*: la forma en la que parsea el mensaje para darle estilo al texto, por defecto esta en html y en el archivo de las funciones del bot en `./src/bot/botFunctions.py` hay funciones para formatear con este formato en negrita, subrayado o con enlaces.
+- *saveMenssage*: si quieres que el mensaje lo guarde el gestor, esto hace que cuando se eliminen todos los mensajes de un usuario este tambien se borre, por defecto esta a `True`
+- *photo*: en caso de que el mensaje vaya con una foto la puedes enviar aqui, la foto debe de estar en formato bytes
+- *disableNotification*: si quieres que la notificacion no le suene al usuario puedes activar esta opcion a `True`, por defecto estara en `False`
+
+**sendNotification** <a id="sendNotification">
 
 
 
