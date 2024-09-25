@@ -81,7 +81,37 @@ A la hora de inicializar el bot, este recibe el token del bot de la API de teleg
 
 Esta funcion inicia el bucle infinito de escucha del bot, este comprueba constantemente las acutalizaciones del bot llamando a la funcion correspondiente de `Telebot`, esto siempre que no se haya detenido fijando la variable del bucle a `false`
 
-**startMainLoop** <a id="startMainLoop"/>
+**inicializeCommands** <a id="startMainLoop"/>
+
+Esta funcion inicializa los siguientes comandos del bot:
+
+- La funcion que atendera las respuestas por texto que recibe el bot llamando a [`messageReciber`](#messageReciber)
+- La funcion que al el bot y cuando se utiliza su comando `/start`. Esta llama a [`buttonsControler`](#buttonsControler) con el comando de inicio
+- La funcion que gestiona cuando se pulsa un boton, llamando a [`buttonsControler`](#buttonsControler) con el comando del boton que se haya pulsado 
+
+**buttonsControler** <a id="buttonsControler">
+
+Esta funcion recibe un usuario y los datos a procesar. Los datos son una cadena de caracteres, en la que hay varaias instrucciones separadas por `_-_`, la primera es el comando a utilizar, y el resto los argumentos que recibe. Gestiona los siguientes comandos
+
+- *cmd_start*: el comando que se ejecuta cuando se va a la pagina principal del bot, llama a la funcion [`cmd_start`](#cmd_start)
+- *cmd_help*: el comando que se ejecuta cuando se va a la pagina de ayuda del bot, llama a la funcion [`cmd_help`](#cmd_help)
+- *cmd_products_list*: el comando que gestiona la pagina de los productos del usuario. Este, si no recibe ningun argumento lo que hace es mostrar la pagina con los productos del usuario llamando a la funcion [`cmd_products_list`](#cmd_products_list). En caso de tener argumentos, puede tener 2:
+    - `remove`: este elimina la peticion con el id que reciba como argumento. Esto lo hace eliminandolo del gestor y seguido refrescando la vista del usuario llamando a [`cmd_products_list`](#cmd_products_list) 
+    - `edit`: este abre la vista para poder editar la peticion con el id que reciba de argumento. Para esto llama a [`showAddingRequest`](#showAddingRequest) habiendo fijado la peticion como la editable
+- *cmd_add_product*: el comando que se ejecuta cuando se va a la pagina de añadir un producto del bot, llama a la funcion [`cmd_add_product`](#cmd_add_product)
+- *add_product*: el comando que se llama para gestionar un producto que se esta gestionando o añadiendo. Este puede recibir los siguinetes argumentos:
+    - `addTags`: este inicializa los valores para poder añadir un deseado a la peticion de un producto. Despues llama a [`showAddingTagsToRequest`](#showAddingTagsToRequest) para que muestre la seleccion de las tags
+    - `save`: este guarda la peticion del producto que esta añadiendo el usuario a traves del gestor, y despues llama a [`cmd_add_product`](#cmd_add_product) para volver a la vista de añadir un producto con el aviso de que se ha guardado el producto correctamente
+    - `tagSelected`: recive una tag para añadir a un deseado de una peticion. En caso de ser la ultima tag que se pueda añadir al deseado, crea el objeto del deseado y lo añade a la peticion temporal del usuario, despues vuelve a la vista para editar la peticion llamando a [`showAddingRequest`](#showAddingRequest). En caso no ser la ultima, se actualiza la vista para seguir añadiendo tags al deseado llamando a [`showAddingTagsToRequest`](#showAddingTagsToRequest)
+    - `cancelAddTags`: cancela el proceso de seleccionar los tags de un deseado y vuelve a la vista del prodcuto con [`showAddingRequest`](#showAddingRequest)
+    - `cleanTags`: elimina la lisa de deseados que tiene la peticion que se esta editando y se recarga la vista llamando a [`showAddingRequest`](#showAddingRequest)
+- *del_notification*: el comando se utiliza para eliminar la notificacion que le ha saltado al usuario, esta recibe 2 valores, primero el id de la peticion de la que es la notificacion, y despues el id del deseado del la peticion del que es la notificacion. Con esto, a traves del gestor, elimina la notificacion
+- *del_request*: el comando se utiliza para eliminar una peticion recibiendo su id como parametro. Con este id y una llamada al gestor elimina la peticion
+- *del_whised*: el comando se utiliza para eliminar un deseado de una peticion recibiendo dos parametros. Primero el id de la peticion y despues el id del deseado. Con estos ids y una llamada al gestor elimina el deseado de la peticion
+
+**messageReciber** <a id="messageReciber">
+
+
 
 ### Documentacion de la base de datos <a id="base_de_datos">
 

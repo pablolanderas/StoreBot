@@ -33,8 +33,7 @@ class StoreBot(TeleBot):
         self.inloop = True
         while self.inloop:
             self.get_updates()
-            
-
+               
     def inicializeCommands(self) -> None:
         @self.message_handler(func=lambda message: True and not message.text.startswith('/start'))
         def start_caller(message): 
@@ -91,6 +90,7 @@ class StoreBot(TeleBot):
             case "cmd_add_product":
                 self.cmd_add_product(user)
             case "add_product":
+                if not commands: return
                 match commands.pop(0):
                     case "addTags":
                         user.tagsTemporal = []
@@ -107,8 +107,9 @@ class StoreBot(TeleBot):
                         user.temporal = None
                         self.cmd_add_product(user, notice="El producto se ha guardado correctamente")
                     case "tagSelected":
+                        if not commands: return
                         tag = commands.pop(0)
-                        # Check if the tag is the last
+                        # Move to the tag
                         temp = user.temporal.producto.tags
                         for key in user.tagsTemporal:
                             temp = temp[key]
