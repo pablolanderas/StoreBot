@@ -166,6 +166,26 @@ Estos valores ya son opcionales, no son obligatorios:
 
 **sendNotification** <a id="sendNotification">
 
+Esta funcion envia una notificacion a un usuario y lo devuelve una vez enviado. Ademas de esto tambien lo guarda en el gestor como una notificacion. Por dentro lo que hace es llamar a [`sendMessage`](#sendMessage) y guardar el mensaje antes de devolverlo. Recibe los mismos argumentos que [`sendMessage`](#sendMessage) pero sin *saveMenssage* ya que la notificacion no se guarda como un mensaje si no como una notificaion, ni tampoco usa *disableNotification* ya que siempre quieres que suene la notificacion
+
+**getUserAndMessageFromBotsMessageType** <a id="getUserAndMessageFromBotsMessageType">
+
+Esta funcion recibe una clase `Message` de Telebot y si quiere que se elimine el mensaje que se acaba de recibir. Despues esta devuelve el usuario y el mensaje que ha escrito el usuario con la clase que utiliza nuestro bot `Mensaje`.
+
+**copyUsersMessagesToDelete** <a id="copyUsersMessagesToDelete">
+
+Esta funcion recibe un usuario, lo que hace es obtener los mensajes que tiene en su chat y eliminarlos del gestor. Despues, los añade a una varible en la que guarda los mensajes de todos los usuarios para que cuando se llame a la funcion [`deleteCopiedMessages`](#deleteCopiedMessages) se eliminen todos juntos
+
+**deleteCopiedMessages** <a id="deleteCopiedMessages">
+
+Esta funcion recibe un usuario y elimina todos los mensajes del usuario guardados en el bot al utilizar la funcion [`copyUsersMessagesToDelete`](#copyUsersMessagesToDelete)
+
+**showRequest** <a id="showRequest">
+
+Esta funcion recibe una peticion y la muestra con el formato que se obtiene de las vistas del archivo de las funciones del bot en `./src/bot/botFunctions.py`
+
+**showAddingRequest** <a id="showAddingRequest">
+
 
 
 ### Documentacion de la base de datos <a id="base_de_datos">
