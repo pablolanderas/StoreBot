@@ -297,7 +297,7 @@ class StoreBot(TeleBot):
         # Delete the copied messgaes
         self.deleteCopiedMessages(user)
 
-    def showAddingTagsToRequest(self, user):
+    def showAddingTagsToRequest(self, user: Usuario):
         self.copyUsersMessagesToDelete(user)
         temp = deepcopy(user.temporal.producto.tags)        
         # Delete the already added tags

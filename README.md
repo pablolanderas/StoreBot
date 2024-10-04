@@ -186,11 +186,11 @@ Esta funcion recibe una peticion y la muestra con el formato que se obtiene de l
 
 **showAddingRequest** <a id="showAddingRequest">
 
+Esta funcion recibe un usuario y un mensaje opcional extra. Esta lo que hace es mostrar el producto que esta añadiendo el usuario con los botones necesarios para interactuar con el y poderle añadir avisos, limpiar los avisos que ya tenga, guardar el producto como esta o cancelar lo que se esta haciendo con el producto. Esto lo hace llamando a [`showRequest`](#showRequest) con los botones necesarios para llamar a esas funcionalidades. Por ultimo, si habia un mensaje opcional extra, lo envías
 
+**showAddingTagsToRequest** <a id="showAddingTagsToRequest">
 
-### Documentacion de la base de datos <a id="base_de_datos">
-
-### Documentacion del gestor <a id="gestor">
+Esta funcion recibe un usuario y lo que hace es mostrar las tags que puede seguir seleccionando y llama a [`showRequest`](#showRequest) con ellas. Ademas tambien añade otro boton para cancelar el seguir añadiendo tagas.
 
 ### Implementacion de nuevas tiendas <a id="nuevos_productos">
 
