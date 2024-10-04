@@ -192,6 +192,14 @@ Esta funcion recibe un usuario y un mensaje opcional extra. Esta lo que hace es 
 
 Esta funcion recibe un usuario y lo que hace es mostrar las tags que puede seguir seleccionando y llama a [`showRequest`](#showRequest) con ellas. Ademas tambien añade otro boton para cancelar el seguir añadiendo tagas.
 
+### Documentacion de la base de datos <a id="base_de_datos">
+
+*TODO*
+
+### Documentacion del gestor <a id="gestor">
+
+*TODO*
+
 ### Implementacion de nuevas tiendas <a id="nuevos_productos">
 
 Para añadir nuevas tiendas se hace a traves de herencia del la clase ``Prodcuto`` con la implementacion aqui explicada`'
