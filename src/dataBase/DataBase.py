@@ -73,10 +73,10 @@ def adaptTipe(val) -> str:
 class DataBase:
 
     def startDataBase(dirBD, dirScript):
-        if path.exists(dirBD):
-            remove(dirBD)
         if not path.exists(dirScript):
             raise ValueError("No se ha encontrado el script")
+        if path.exists(dirBD):
+            remove(dirBD)
         db = connect(dirBD)
         with open(dirScript, "r") as file:
             sql = file.read()
@@ -141,22 +141,22 @@ class DataBase:
         self.db.execute(consult)
         if commit: self.db.commit()
 
-    def saveProducto(self, product:Producto) -> int:
+    def saveProducto(self, product:Producto, commit=True) -> int:
         # Check if the arg is correct
         if not isinstance(product, Producto): 
             raise ValueError("The type of product is incorrect")
         # Save in the DB
-        Id = self.funInsert(TABLAS.Productos, url=product.url)
+        Id = self.funInsert(TABLAS.Productos, url=product.url, commit=commit)
         product.id = Id
         # Return de Id
         return Id
 
-    def deleteProducto(self, product:Producto):
+    def deleteProducto(self, product:Producto, commit=True):
         # Check if the arg is correct
         if not isinstance(product, Producto):
             raise ValueError("The type of product is incorrect")
         # Delete the product
-        self.funDelete(TABLAS.Productos, f"{ATRIBUTOS.Productos.productId} = {product.id}")
+        self.funDelete(TABLAS.Productos, f"{ATRIBUTOS.Productos.productId} = {product.id}", commit=False)
 
     def checkIfProductInRequest(self, product:Producto) -> bool:
         query = self.funSelect(TABLAS.Peticiones, ATRIBUTOS.Peticiones.productId, f"{ATRIBUTOS.Peticiones.productId} = {product.id}")
@@ -178,11 +178,11 @@ class DataBase:
         if commit: self.db.commit()
 
     def updateUsuarioUsername(self, user:Usuario, commit=True):
-        self.funUpdate(TABLAS.Usuarios, f"{ATRIBUTOS.Usuarios.chatId} = {user.chatId}", commit=False, username=user.username)
-        if commit: self.db.commit()
+        self.funUpdate(TABLAS.Usuarios, f"{ATRIBUTOS.Usuarios.chatId} = {user.chatId}", commit=commit, username=user.username)
 
-    def deleteAllMensajesFromUsuario(self, user: Usuario):
-        self.funDelete(TABLAS.Mensajes, (f"{ATRIBUTOS.Mensajes.chatId} = {user.chatId}",))
+    def deleteAllMensajesFromUsuario(self, user: Usuario, commit=True):
+        user.chatMessages.clear()
+        self.funDelete(TABLAS.Mensajes, (f"{ATRIBUTOS.Mensajes.chatId} = {user.chatId}",), commit=commit)
 
     def saveMensaje(self, message:Mensaje, commit=True): 
         # Check if the arg is correct
@@ -223,7 +223,7 @@ class DataBase:
         if commit: self.db.commit()
         return requestId
 
-    def deletePeticion(self, request: Peticion):
+    def deletePeticion(self, request: Peticion, commit=True):
         # Check if the arg is correct
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
@@ -235,9 +235,8 @@ class DataBase:
         # Delete the price wish
         self.deletePeticionPriceMessage(request, commit=False)
         # Commit the changes
-        self.db.commit()
+        if commit: self.db.commit()
 
-    # IMPORTANT: This metod doesnt save the notifications
     def updatePeticion(self, request: Peticion, commit=True, updateWisheds=True):
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
@@ -274,7 +273,7 @@ class DataBase:
         if type(request) != Peticion:
             raise ValueError("The type of request is incorrect")
         # Delete the price wish
-        self.funDelete(TABLAS.Deseado, conditions=(
+        self.funDelete(TABLAS.Deseado, commit=commit, conditions=(
                 f"{ATRIBUTOS.Deseado.requestId} = {request.idPeticion}",
                 f"{ATRIBUTOS.Deseado.tipoPrecio} = 1"))
         # Commit the changes
@@ -297,8 +296,7 @@ class DataBase:
                             messageId=request.notificacionPrecio.messageId, 
                             tipoPrecio=1)
         # Commit the changes
-        if commit:
-            self.db.commit()
+        if commit: self.db.commit()
         return priceId
 
     def saveDeseado(self, wished:Deseado, commit=True):
@@ -352,9 +350,7 @@ class DataBase:
         else:
             messageId = None
         self.funUpdate(TABLAS.Deseado, f"{ATRIBUTOS.Deseado.deseadoId} = {wished.idDeseado}",
-                        messageId=messageId, commit=False)
-        # Commit the changes
-        if commit: self.db.commit()
+                        messageId=messageId, commit=commit)
 
     def deleteDeseado(self, wished: Deseado, commit=True):
         # Get the tagNames

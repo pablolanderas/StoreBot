@@ -194,11 +194,96 @@ Esta funcion recibe un usuario y lo que hace es mostrar las tags que puede segui
 
 ### Documentacion de la base de datos <a id="base_de_datos">
 
-*TODO*
+La base de datos esta implementada en una base de datos SQLite, el archivo con el que se crea esta se encuentra en `src/dataBase/database.sql`. Esta esta diseñada de la siguiente forma:
+
+![Descripción de la imagen](dsg/Base%20de%20datos.PNG)
+
+Toda la base de datos se gestiona desde la clase `src/dataBase/DataBase.py`. En ese archivo hay unas clases para utilizar las tablas y los atributos de las tablas como constantes. La el contructor de clase `Database` recibe la direccion en la que se encuentra el arcihvo de la base de datos, que en caso de no existir lanza un error. Si no esta creada la base de datos, hay que llamar antes al metodo estatico de la clase `startDataBase`, que recibe la direccion donde quieres crear el archivo de la base de datos (en caso de ya existir el archivo cuidado que lo eliminará) y el archivo con el que se genera la base de datos. 
+
+#### Funciones para el uso del SQL
+
+Para la gestion de todas las instruciones SQL se utilizan unas funciones base para hacer mucho mas sencilla su utilizacion y evitar los errores. Estas son la funciones [`funSelect`](#funSelect), [`funInsert`](#funInsert), [`funDelete`](#funDelete) y [`funUpdate`](#funUpdate)
+
+**funSelect** <a id="funSelect">
+
+Esta funcion sirve para hacer un select a la base de datos, esta recibe la tabla sobre la que se quiere hacer hacer el select. A parte de esto, tambien puede recibir unos valores opcionales:
+
+- *columns:* una lista de las columnas que quieres obtener, por defecto son todas.
+
+- *conditions:* una lista de las condiciones que quieres que cumplan tus resultados, esta debe de ser una lista de strings con condiciones, estas <u>se separan siempre por un AND</u>.
+
+- *order:* una lista con los valores que se quieren utilizar para ordenar los resultados
+
+**funInsert** <a id="funInsert">
+
+Esta funcion sirve para hacer un intsert a la base de datos, esta recibe la tabla sobre la que se quiere hacer hacer el insert, si quieres que se realice el commit despues de la instruccion (por defecto si) y por ultimo los valores que hay que añadir, referenciandolo, por ejemplo asi se añadiria un usuario nuevo
+
+~~~python
+funInsert(TABLAS.Usuarios, commit=False, chatId=122323, username="usuario")
+~~~
+
+**funDelete** <a id="funDelete">
+
+Esta funcion sirve para hacer un delete a la base de datos, esta recibe la tabla sobre la que se quiere hacer hacer el delete. A parte de esto, tambien puede recibir unos valores opcionales:
+
+- *conditions:* una lista de las condiciones que quieres que cumplan tus resultados, esta debe de ser una lista de strings con condiciones, estas <u>se separan siempre por un AND</u>.
+
+- *commit:* inidica si quiereres que se guarde la base de datos despues de la instruccion, por defecto si
+
+**funUpdate** <a id="funUpdate">
+
+Esta funcion sirve para hacer un update a la base de datos, esta recibe la tabla sobre la que se quiere hacer hacer el update. A parte de esto, tambien puede recibir unos valores opcionales:
+
+- *conditions:* una lista de las condiciones que quieres que cumplan las filas que quieres que se editen, esta debe de ser una lista de strings con condiciones, estas <u>se separan siempre por un AND</u>.
+
+- *commit:* inidica si quiereres que se guarde la base de datos despues de la instruccion, por defecto si
+
+- *valores a editar:* los valores que hay que editar, los referencias, como se hacia en [`funInsert`](#funInsert) para añadir
+
+#### Funciones externas
+
+Una vez creadas las funciones para acceder a base de datos, se crean las siguientes funciones para que el [`Gestor`](#gestor) pueda acceder a la base de datos de forma sencilla. Estas son las funciones que puedes hacer:
+
+**loadGestorData** <a id="loadGestorData">
+
+Esta funcion recibe un [`Gestor`](#gestor) y lo carga con los datos de la base de datos. Esta es una funcion compleja que debe de cargar todos los productos, por ello si el [`Gestor`](#gestor) tiene definia la [`funReporte`](#funReporte) notifica la cantdad de productos carga.
+
+**Añadir una nueva instancia** <a id="anhadir_instancia">
+
+Existen las siguientes funciones para añadir una nueva instancia en base de datos: `saveProducto`, `saveMensaje`, `saveNotificacion`, `savePeticion`, `saveDeseado` y `saveUsuario`. Todas reciben la clase que se quiere guardar y opcionalmente puede pasarse el valor de commit, que si lo pasas a false no hara un commit de la base de datos, este por defecto esta a True.
+
+**Eliminar de la base de datos** <a id="eliminar_instacia">
+
+Para eliminar de la base de datos existen varias funciones, todas estas pueden recibir una variable `commit` para indicar si quieres que se guarden los cambios o no al final de la funcion. Las funciones son las siguientes:
+
+- *deleteProducto:* recibe un producto y lo elimina de la base de datos
+- *deleteAllMensajesFromUsuario:* recibe un usuario y elimina todos los mensajes de  tanto de la clase como de la base de datos.
+- *deletePeticion:* recibe una peticion y la elimina de la base de datos, tanto a la peticion como los deseados y avisos
+- *deleteDeseado:* recibe un deseado y lo elimina de base de datos, ademas si la tabal de `TagName` se queda sin elementos que referenciar lo elimina tambien
+- *deletePeticionPriceMessage:* recibe una peticion y elimina de base de datos el deseado asignado al aviso de bajada de precio
+
+**Actualizar la base de datos** <a id="actulizar_instancia">
+
+Para actualizar informacion en la bade de datos existen varias funciones, todas estas pueden recibir una variable `commit` para indicar si quieres que se guarden los cambios o no al final de la funcion. Las funciones son las siguientes:
+
+- *updateUsuarioUsername:* recibe un usuario, al cual le actualiza el user name en la base de datos
+- *updatePeticion:* recibe una peticion y si quieres que se actualicen los deseados o no. Si no actualizas los deseados no se actualizaran las notificaciones
+- *updatePeticionPriceMessage:* recibe una peticion y actualiza en base de datos el mensaje del aviso del precio en caso de haber, y si no hay lo crea
+- *updateDeseado:* recibe un deseado y edita su mensaje en la base de datos. Cuidado ya que este metodo no edita las tags, unicmaente edita el mensaje
+
+**Obtener informacion de la base de datos** <a id="get_instancia">
+
+Para obtener informacion de la base de datos estan las siguientes funciones:
+
+- *checkIfProductInRequest:* recibe un producto y retorna un booleano que te indica si el producto se encuentra en alguna peticion
+- *getWishedsForRequest:* recibe una peticion y retorna una lista con todos los deseados asignados a esa peticion
+- *getTagNameId:* recibe un nombre a asignar a una tag, en caso de existir la tag devuelve su id en base de datos, en caso de no existir la crea y devuelve su id
+- *getWishedTags:* recibe el id de un deseado y devuelve una lista con las tags en orden
+- *getAllProducts:* esta funcion se encarga de cargar todos los productos en un diccionario en el que la clave es el id del producto y el valor el propio producto. Como es una funcion pesada ya que cargar todos los productos implica hacer muchas peticiones y cargar mucha informacion puede recibir un notificator (no obligatorio, por defecto es `None`), que es una funcion la cual debe de poder recibir un string, y cada vez que carga un producto lo notifica diciendo cuantos lleva y el nombre del producto que ha cargado.
 
 ### Documentacion del gestor <a id="gestor">
 
-*TODO*
+TODO
 
 ### Implementacion de nuevas tiendas <a id="nuevos_productos">
 

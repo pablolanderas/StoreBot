@@ -53,7 +53,6 @@ class Gestor:
 
     def deleteUsersMessages(self, user: Usuario) -> list[Mensaje]:
         messages = user.chatMessages.copy()
-        user.chatMessages.clear()
         self.dataBase.deleteAllMensajesFromUsuario(user)
         return messages
     
