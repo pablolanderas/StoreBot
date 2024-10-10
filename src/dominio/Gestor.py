@@ -23,9 +23,6 @@ class Gestor:
     funNotificateUser = None
 
     def __init__(self, dataBase:DataBase, cargarGestor=True) -> None:
-        # Check if the functions have been inicializated
-        if None in (self.funReporte, self.funError):
-            raise ModuleNotFoundError("The functions to report the Gestor hasnt been inicializated") 
         # Inicializate the class
         self.dataBase = dataBase
         self.usuarios = {}
@@ -33,8 +30,14 @@ class Gestor:
 
         # Get the DB data
         if cargarGestor:
-            dataBase.loadGestorData(self)
+            self.initTheGestor()
 
+    def initTheGestor(self) -> None:
+        # Check if the functions have been inicializated
+        if None in (self.funReporte, self.funError, self.funDelMessage, self.funNotificateUser):
+            raise ModuleNotFoundError("The functions to report the Gestor hasnt been inicializated") 
+        self.dataBase.loadGestorData(self)
+        
     def getUserFromMessage(self, message: Mensaje) -> Usuario:
         # Return the user if exists
         if message.chatId in self.usuarios:
